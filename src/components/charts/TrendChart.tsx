@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select"
 import { filterByDateRange, fillTimeSeriesGaps, formatChartDate } from "@/lib/chart-utils"
 
-export interface TrendChartProps<T extends { created_at: string }> {
+export interface TrendChartProps<T> {
     data: T[]
     title: string
     description?: string
@@ -35,7 +35,7 @@ const defaultTimeRanges = [
     { value: "90d", label: "Last 90 days", days: 90 },
 ]
 
-export function TrendChart<T extends { created_at: string }>({
+export function TrendChart<T>({
     data,
     title,
     description,
@@ -50,10 +50,12 @@ export function TrendChart<T extends { created_at: string }>({
     const selectedRange = timeRanges.find(r => r.value === timeRange) || timeRanges[0]
 
     const chartData = React.useMemo(() => {
-        const filtered = filterByDateRange(data, selectedRange.days)
+        // Cast to any to assume the data strictly satisfies the utils requirements (has created_at)
+        // or that transformData handles it.
+        const filtered = filterByDateRange(data as any[], selectedRange.days)
 
         if (transformData) {
-            return transformData(filtered, selectedRange.days)
+            return transformData(filtered as T[], selectedRange.days)
         }
 
         // Default transformation: count items per day
@@ -66,8 +68,8 @@ export function TrendChart<T extends { created_at: string }>({
             return acc
         }, {} as Record<string, { date: string; count: number }>)
 
-        const timeSeries = Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date))
-        return fillTimeSeriesGaps(timeSeries, selectedRange.days)
+        const timeSeries = Object.values(grouped).sort((a: any, b: any) => a.date.localeCompare(b.date))
+        return fillTimeSeriesGaps(timeSeries as any[], selectedRange.days)
     }, [data, selectedRange.days, transformData])
 
     const chartConfig = React.useMemo(() => {

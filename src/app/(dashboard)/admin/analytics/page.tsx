@@ -10,30 +10,25 @@ import { ComparisonChart } from "@/components/charts/ComparisonChart"
 import { Users, Activity, FileText, Shield } from "lucide-react"
 
 export default function AdminAnalyticsPage() {
-    const { data: usersData } = useQuery({
-        queryKey: ['admin', 'users'],
-        queryFn: () => api.getUsers({ page: 1, page_size: 100 }),
+    const { data: stats } = useQuery({
+        queryKey: ['analytics', 'stats'],
+        queryFn: () => api.analytics.getStats(),
     })
 
-    const { data: analysesData } = useQuery({
-        queryKey: ['analyses'],
-        queryFn: () => api.getAnalyses({ page: 1, page_size: 100 }),
+    const { data: activity } = useQuery({
+        queryKey: ['analytics', 'activity'],
+        queryFn: () => api.analytics.getActivity(30),
     })
 
-    const { data: reportsData } = useQuery({
-        queryKey: ['reports'],
-        queryFn: () => api.getReports({ page: 1, page_size: 100 }),
+    const { data: roleDistribution } = useQuery({
+        queryKey: ['analytics', 'distribution', 'role'],
+        queryFn: () => api.analytics.getDistribution('role'),
     })
 
-    const { data: patientsData } = useQuery({
-        queryKey: ['patients'],
-        queryFn: () => api.getPatients({ page: 1, page_size: 100 }),
-    })
-
-    const analyses = analysesData?.data || []
-    const users = usersData?.data || []
-    const patients = patientsData?.data || []
-    const reports = reportsData?.data || []
+    // Calculate analyses per user safely
+    const analysesPerUser = (stats?.total_users && stats.total_analyses)
+        ? (stats.total_analyses / stats.total_users).toFixed(1)
+        : '0.0'
 
     return (
         <div className="flex flex-col space-y-6 p-6">
@@ -54,21 +49,24 @@ export default function AdminAnalyticsPage() {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
                     <div className="lg:col-span-4">
                         <TrendChart
-                            data={analyses}
+                            data={(activity || []).map(item => ({ ...item, created_at: item.date }))}
                             title="Platform Activity"
                             description="Historical analysis volume across all clinicians"
                             dataKeys={[
-                                { key: "count", label: "Analyses", color: "var(--chart-2)" }
+                                { key: "value", label: "Analyses", color: "var(--chart-2)" }
                             ]}
                             height={350}
+                            transformData={(data) => {
+                                return data.map(item => ({ ...item, date: item.date }))
+                            }}
                         />
                     </div>
                     <div className="lg:col-span-3">
                         <DistributionChart
-                            data={users}
+                            data={roleDistribution || []}
                             title="User Roles"
                             description="Distribution of administrative and clinical staff"
-                            groupByKey="role"
+                            groupByKey="id"
                             labelFormatter={(v: string) => v.charAt(0).toUpperCase() + v.slice(1)}
                             height={350}
                         />
@@ -83,7 +81,7 @@ export default function AdminAnalyticsPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {users.length > 0 ? (analyses.length / users.length).toFixed(1) : '0'}
+                                {analysesPerUser}
                             </div>
                         </CardContent>
                     </Card>
@@ -94,9 +92,13 @@ export default function AdminAnalyticsPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                +18.4%
+                                {stats?.change_percentages?.analyses ? (
+                                    <span className={stats.change_percentages.analyses > 0 ? 'text-green-600' : 'text-red-600'}>
+                                        {stats.change_percentages.analyses > 0 ? '+' : ''}{stats.change_percentages.analyses}%
+                                    </span>
+                                ) : '0%'}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">vs. previous 30 days</p>
+                            <p className="text-xs text-muted-foreground mt-1">vs. previous month</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -106,9 +108,11 @@ export default function AdminAnalyticsPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                92%
+                                {stats?.total_reports && stats.total_analyses
+                                    ? Math.round((stats.total_reports / stats.total_analyses) * 100)
+                                    : 0}%
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">Extraction success rate</p>
+                            <p className="text-xs text-muted-foreground mt-1">Report generation rate</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -119,21 +123,9 @@ export default function AdminAnalyticsPage() {
                         <CardDescription>Comparative analysis of platform resources</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-[300px] flex items-center justify-center text-muted-foreground italic">
-                            <ComparisonChart
-                                data={[
-                                    { date: '2024-01', users: 10, patients: 50, reports: 120 },
-                                    { date: '2024-02', users: 15, patients: 80, reports: 190 },
-                                    { date: '2024-03', users: 22, patients: 120, reports: 280 }
-                                ]}
-                                title=""
-                                dataKeys={[
-                                    { key: "users", label: "Clinicians", color: "var(--chart-1)" },
-                                    { key: "patients", label: "Patients", color: "var(--chart-3)" },
-                                    { key: "reports", label: "Reports", color: "var(--chart-5)" }
-                                ]}
-                                allowToggle
-                            />
+                        {/* Placeholder for future multi-metric chart */}
+                        <div className="h-[300px] flex items-center justify-center text-muted-foreground bg-muted/10 rounded-lg">
+                            <p>Detailed system load scaling metrics coming soon</p>
                         </div>
                     </CardContent>
                 </Card>

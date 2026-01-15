@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { api, setAuthToken, setRefreshToken, removeAuthToken, removeRefreshToken, getAuthToken } from './api'
 import type { AuthUser, AuthState, UserRole } from '@/types'
 
@@ -21,6 +21,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: true,
     })
     const router = useRouter()
+    const pathname = usePathname()
+
+    // Redirect logic for onboarding
+    useEffect(() => {
+        if (state.isLoading) return
+
+        if (state.isAuthenticated && state.user) {
+            // If user has no organization and is not admin and not already on onboarding page
+            if (
+                !state.user.organization_id &&
+                state.user.role !== 'admin' &&
+                pathname !== '/onboarding'
+            ) {
+                router.push('/onboarding')
+            }
+        }
+    }, [state.isAuthenticated, state.user, state.isLoading, pathname, router])
 
     // Load user on mount
     useEffect(() => {
@@ -76,7 +93,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isLoading: false,
             })
 
-            router.push('/')
+            // Redirect logic handled by effect, but we can hint base navigation here
+            // If we push '/', the effect will interception if needed.
+            // However, we should respect the effect.
+            // We can just set state and let effect handle it, OR push to target.
+            // If logic says onboarding, effect will push to onboarding.
+            // If logic says OK, we push to /.
+            if (!user.organization_id && user.role !== 'admin') {
+                router.push('/onboarding')
+            } else {
+                router.push('/')
+            }
         } catch (error) {
             throw error
         }

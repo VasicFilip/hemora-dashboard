@@ -28,8 +28,15 @@ import type {
   UserCreate,
   UserUpdate,
   UserResponse,
+  ClinicianCreate,
   OrganizationSettings,
   SettingsUpdate,
+  AnalyticsStats,
+  TimeSeriesPoint,
+  DistributionPoint,
+  SystemUsageStats,
+  CreateOrganizationRequest,
+  OrganizationResponse,
 } from '@/types'
 
 // API Configuration
@@ -606,6 +613,17 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  createClinician: (data: ClinicianCreate) =>
+    apiRequest<{ message: string; user_id: string; organization_id: string }>('/api/admin/clinicians', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  deleteUser: (userId: string) =>
+    apiRequest<{ message: string }>(`/api/admin/users/${userId}`, {
+      method: 'DELETE',
+    }),
+
   getOrganizationSettings: () =>
     apiRequest<OrganizationSettings>('/api/admin/settings'),
 
@@ -642,4 +660,32 @@ export const api = {
     apiRequest<{ message: string }>('/api/auth/logout', {
       method: 'POST',
     }),
+
+  // Create organization (Onboarding)
+  createOrganization: (data: CreateOrganizationRequest) =>
+    apiRequest<OrganizationResponse>('/api/organizations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // ============================================================================
+  // ANALYTICS
+  // ============================================================================
+
+  analytics: {
+    getStats: (view: 'admin' | 'clinician' = 'admin') =>
+      apiRequest<AnalyticsStats>(`/api/analytics/stats?view=${view}`),
+
+    getActivity: (days: number = 30, view: 'admin' | 'clinician' = 'admin') =>
+      apiRequest<TimeSeriesPoint[]>(`/api/analytics/activity?days=${days}&view=${view}`),
+
+    getDistribution: (type: 'status' | 'source' | 'role', view: 'admin' | 'clinician' = 'admin') =>
+      apiRequest<DistributionPoint[]>(`/api/analytics/distribution?type=${type}&view=${view}`),
+
+    getRiskProfile: (view: 'admin' | 'clinician' = 'admin') =>
+      apiRequest<DistributionPoint[]>(`/api/analytics/risk-profile?view=${view}`),
+
+    getSystemUsage: () =>
+      apiRequest<SystemUsageStats>('/api/analytics/system-usage'),
+  },
 }

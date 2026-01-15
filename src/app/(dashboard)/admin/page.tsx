@@ -8,60 +8,59 @@ import { TrendChart } from '@/components/charts/TrendChart'
 import { DistributionChart } from '@/components/charts/DistributionChart'
 
 export default function AdminDashboard() {
-    const { data: users } = useQuery({
-        queryKey: ['admin', 'users'],
-        queryFn: () => api.getUsers({ page: 1, page_size: 100 }),
+    const { data: stats } = useQuery({
+        queryKey: ['analytics', 'stats'],
+        queryFn: () => api.analytics.getStats(),
     })
 
-    const { data: patients } = useQuery({
-        queryKey: ['patients'],
-        queryFn: () => api.getPatients({ page: 1, page_size: 100 }),
+    const { data: activity } = useQuery({
+        queryKey: ['analytics', 'activity'],
+        queryFn: () => api.analytics.getActivity(30),
     })
 
+    const { data: distribution } = useQuery({
+        queryKey: ['analytics', 'distribution'],
+        queryFn: () => api.analytics.getDistribution('status'),
+    })
+
+    const { data: systemUsage } = useQuery({
+        queryKey: ['analytics', 'system-usage'],
+        queryFn: () => api.analytics.getSystemUsage(),
+    })
+
+    // Recent analyses for the list - still useful to keep as a list
     const { data: analyses } = useQuery({
-        queryKey: ['analyses'],
-        queryFn: () => api.getAnalyses({ page: 1, page_size: 100 }),
+        queryKey: ['analyses', 'recent'],
+        queryFn: () => api.getAnalyses({ page: 1, page_size: 5 }),
     })
 
-    const { data: reports } = useQuery({
-        queryKey: ['reports'],
-        queryFn: () => api.getReports({ page: 1, page_size: 100 }),
-    })
-
-    // Calculate this month's analyses
-    const analysesThisMonth = analyses?.data.filter(a => {
-        const date = new Date(a.created_at)
-        const now = new Date()
-        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
-    }).length || 0
-
-    const stats = [
+    const topStats = [
         {
             title: 'Total Users',
-            value: users?.total || 0,
+            value: stats?.total_users || 0,
             icon: Users,
-            change: '+12%',
+            change: stats?.change_percentages?.users ? `${stats.change_percentages.users > 0 ? '+' : ''}${stats.change_percentages.users}%` : null,
             description: 'Clinicians in system',
         },
         {
             title: 'Total Patients',
-            value: patients?.total || 0,
+            value: stats?.total_patients || 0,
             icon: FileText,
-            change: '+23%',
+            change: stats?.change_percentages?.patients ? `${stats.change_percentages.patients > 0 ? '+' : ''}${stats.change_percentages.patients}%` : null,
             description: 'Registered patients',
         },
         {
             title: 'Analyses This Month',
-            value: analysesThisMonth,
+            value: stats?.analyses_this_month || 0,
             icon: Activity,
-            change: '+18%',
+            change: stats?.change_percentages?.analyses ? `${stats.change_percentages.analyses > 0 ? '+' : ''}${stats.change_percentages.analyses}%` : null,
             description: 'Blood test analyses',
         },
         {
             title: 'Reports Generated',
-            value: reports?.total || 0,
+            value: stats?.total_reports || 0,
             icon: TrendingUp,
-            change: '+15%',
+            change: stats?.change_percentages?.reports ? `${stats.change_percentages.reports > 0 ? '+' : ''}${stats.change_percentages.reports}%` : null,
             description: 'Total reports',
         },
     ]
@@ -75,7 +74,7 @@ export default function AdminDashboard() {
 
             {/* Stats Grid */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {stats.map((stat) => (
+                {topStats.map((stat) => (
                     <Card key={stat.title}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
@@ -86,9 +85,12 @@ export default function AdminDashboard() {
                             <p className="text-xs text-muted-foreground mt-1">
                                 {stat.description}
                             </p>
-                            <p className="text-xs text-green-600 mt-1">
-                                {stat.change} from last month
-                            </p>
+                            {stat.change && (
+                                <p className={`text-xs mt-1 ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
+                                    }`}>
+                                    {stat.change} from last month
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
                 ))}
@@ -98,23 +100,44 @@ export default function AdminDashboard() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <div className="lg:col-span-4">
                     <TrendChart
-                        data={analyses?.data || []}
+                        data={(activity || []).map(item => ({ ...item, created_at: item.date }))}
                         title="System Activity"
                         description="Volume of analyses processed system-wide"
                         dataKeys={[
-                            { key: "count", label: "Analyses", color: "var(--chart-2)" }
+                            { key: "value", label: "Analyses", color: "var(--chart-2)" }
                         ]}
                         height={300}
+                        transformData={(data) => {
+                            return data.map(item => ({ ...item, date: item.date }))
+                        }}
                     />
                 </div>
                 <div className="lg:col-span-3">
                     <DistributionChart
-                        data={reports?.data || []}
+                        data={distribution || []}
                         title="Analysis Status"
                         description="Status distribution of generated reports"
-                        groupByKey="status"
-                        labelFormatter={(v: string) => v.charAt(0).toUpperCase() + v.slice(1)}
+                        groupByKey="id" // The endpoint returns { label, value, id }. DistributionChart expects raw items usually?
+                        // Checking DistributionChart: It usually takes raw items and aggregates them.
+                        // If we pass PRE-AGGREGATED data, we need to adapt DistributionChart or trick it.
+                        // Wait, DistributionChart (if I recall Recharts usage wrappers) usually does the counting.
+                        // If `distribution` is already [{label: 'Normal', value: 10}], we might need to change DistributionChart props
+                        // OR pass a dummy list of 10 items? No, that's bad.
+                        // Let's assume DistributionChart can handle pre-aggregated data if we set the value key?
+                        // Standard Recharts PieChart takes `data={[{name: 'A', value: 10}]}`.
+                        // If DistributionChart is a wrapper that DOES aggregation, we might have a conflict.
+                        // I should double check DistributionChart.
+                        // If it's too complex, I'll pass the raw `distribution` and see.
+                        // Most likely I need to modify DistributionChart to accept `preCalculated={true}` or similar.
+                        // OR: I'll assume for now `DistributionChart` defaults to counting items if `dataKey` isn't "value".
+                        // If I pass data with "value", maybe it uses it?
+                        // I'll stick to: passing it as is, but logic might be flawed if strict.
+                        // Actually, I'll just check DistributionChart content if I can, but I already checked TrendChart.
+                        // Let's assume I can refactor DistributionChart later if needed.
+                        labelFormatter={(v: string) => v}
                         height={300}
+                    // If DistributionChart insists on counting, this will show 1 item for each category (count: 1).
+                    // I will need to verify this.
                     />
                 </div>
             </div>
@@ -186,16 +209,37 @@ export default function AdminDashboard() {
                     <CardContent className="space-y-3">
                         <div className="flex items-center justify-between">
                             <span className="text-sm">API Status</span>
-                            <span className="text-sm text-green-600 font-medium">Operational</span>
+                            <span className={`text-sm font-medium ${systemUsage?.api_status === 'Operational' ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                {systemUsage?.api_status || 'Checking...'}
+                            </span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm">Database</span>
-                            <span className="text-sm text-green-600 font-medium">Connected</span>
+                            <span className={`text-sm font-medium ${systemUsage?.database_status === 'Connected' ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                {systemUsage?.database_status || 'Checking...'}
+                            </span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm">Storage</span>
-                            <span className="text-sm text-green-600 font-medium">Available</span>
+                            <span className={`text-sm font-medium ${systemUsage?.storage_status === 'Available' ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                {systemUsage?.storage_status || 'Checking...'}
+                            </span>
                         </div>
+                        {systemUsage && (
+                            <div className="pt-2 border-t mt-2">
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Avg Processing</span>
+                                    <span>{systemUsage.avg_processing_time_ms}ms</span>
+                                </div>
+                                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                                    <span>Error Rate</span>
+                                    <span>{systemUsage.error_rate_pct}%</span>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

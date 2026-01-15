@@ -280,6 +280,14 @@ export interface UserCreate {
   role: 'admin' | 'clinician' | 'staff'
 }
 
+export interface ClinicianCreate {
+  email: string
+  name: string
+  password: string
+  organization_name: string
+  organization_phone?: string
+}
+
 export interface UserUpdate {
   email?: string
   name?: string
@@ -379,4 +387,58 @@ export interface AuthState {
   user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean
+}
+
+// ============================================================================
+// ANALYTICS
+// ============================================================================
+
+export interface CreateOrganizationRequest {
+  name: string
+  email: string
+  phone: string
+  address: string
+}
+
+export interface OrganizationResponse {
+  id: string
+  name: string
+  email: string
+  is_active: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export interface AnalyticsStats {
+  total_users?: number
+  total_patients: number
+  total_analyses: number
+  total_reports: number
+  analyses_this_month: number
+  change_percentages?: {
+    analyses?: number
+    users?: number
+    patients?: number
+    reports?: number
+  }
+}
+
+export interface TimeSeriesPoint {
+  date: string
+  value: number
+  category?: string
+}
+
+export interface DistributionPoint {
+  label: string
+  value: number
+  id?: string
+}
+
+export interface SystemUsageStats {
+  avg_processing_time_ms: number
+  error_rate_pct: number
+  api_status: 'Operational' | 'Degraded' | 'Down'
+  database_status: 'Connected' | 'Disconnected'
+  storage_status: 'Available' | 'Full' | 'Error'
 }
