@@ -51,6 +51,7 @@ export default function ResultsPage() {
     }
   }
 
+
   // Fetch Data
   const {
     data: resultData,
