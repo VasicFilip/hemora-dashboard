@@ -254,7 +254,7 @@ export default function ReportsPage() {
                       <TableCell>{report.markers?.length || 0}</TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button size="sm" variant="outline" asChild>
-                          <Link href={`/results/${report.lab_test_id}`}>
+                          <Link href={`/results/${report.analysis_id}`}>
                             <Eye className="mr-1 h-3 w-3" />
                             View
                           </Link>

@@ -2,6 +2,9 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,31 +13,44 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Shield, Loader2, AlertCircle } from "lucide-react"
 
+const signupSchema = z.object({
+    full_name: z.string().min(2, "Full name must be at least 2 characters").trim(),
+    organization_name: z.string().min(2, "Organization name must be at least 2 characters").trim(),
+    email: z.string().email("Invalid email address").trim(),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    admin_secret: z.string().min(1, "Administrative secret code is required"),
+})
+
+type SignupFormValues = z.infer<typeof signupSchema>
+
 export default function TemporaryAdminSignup() {
     const router = useRouter()
     const [isLoading, setIsLoading] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
     const [success, setSuccess] = React.useState(false)
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
+    const form = useForm<SignupFormValues>({
+        resolver: zodResolver(signupSchema),
+        defaultValues: {
+            full_name: "",
+            organization_name: "",
+            email: "",
+            password: "",
+            admin_secret: "",
+        },
+    })
+
+    const onSubmit = async (data: SignupFormValues) => {
         setIsLoading(true)
         setError(null)
 
-        const formData = new FormData(e.currentTarget)
-        const email = formData.get("email") as string
-        const password = formData.get("password") as string
-        const full_name = formData.get("full_name") as string
-        const organization_name = formData.get("organization_name") as string
-        const admin_secret = formData.get("admin_secret") as string
-
         try {
             await api.adminSignup({
-                email,
-                password,
-                full_name,
-                organization_name,
-                admin_secret,
+                email: data.email,
+                password: data.password,
+                full_name: data.full_name,
+                organization_name: data.organization_name,
+                admin_secret: data.admin_secret,
             })
             setSuccess(true)
             setTimeout(() => {
@@ -70,7 +86,7 @@ export default function TemporaryAdminSignup() {
                             </AlertDescription>
                         </Alert>
                     ) : (
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                             {error && (
                                 <Alert variant="destructive">
                                     <AlertCircle className="h-4 w-4" />
@@ -80,29 +96,70 @@ export default function TemporaryAdminSignup() {
                             )}
                             <div className="space-y-2">
                                 <Label htmlFor="full_name">Full Name</Label>
-                                <Input id="full_name" name="full_name" placeholder="John Doe" required />
+                                <Input
+                                    id="full_name"
+                                    placeholder="John Doe"
+                                    {...form.register("full_name")}
+                                    disabled={isLoading}
+                                    autoComplete="name"
+                                />
+                                {form.formState.errors.full_name && (
+                                    <p className="text-sm text-red-500">{form.formState.errors.full_name.message}</p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="organization_name">Organization Name</Label>
-                                <Input id="organization_name" name="organization_name" placeholder="Hemora Clinic" />
+                                <Input
+                                    id="organization_name"
+                                    placeholder="Hemora Clinic"
+                                    {...form.register("organization_name")}
+                                    disabled={isLoading}
+                                    autoComplete="organization"
+                                />
+                                {form.formState.errors.organization_name && (
+                                    <p className="text-sm text-red-500">{form.formState.errors.organization_name.message}</p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
-                                <Input id="email" name="email" type="email" placeholder="admin@example.com" required />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="admin@example.com"
+                                    {...form.register("email")}
+                                    disabled={isLoading}
+                                    autoComplete="email"
+                                />
+                                {form.formState.errors.email && (
+                                    <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="password">Password</Label>
-                                <Input id="password" name="password" type="password" required />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    {...form.register("password")}
+                                    disabled={isLoading}
+                                    autoComplete="new-password"
+                                />
+                                {form.formState.errors.password && (
+                                    <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="admin_secret">Administrative Secret Code</Label>
                                 <Input
                                     id="admin_secret"
-                                    name="admin_secret"
                                     type="password"
                                     placeholder="Enter the secret setup code"
-                                    required
+                                    {...form.register("admin_secret")}
+                                    disabled={isLoading}
+                                    autoComplete="off"
                                 />
+                                {form.formState.errors.admin_secret && (
+                                    <p className="text-sm text-red-500">{form.formState.errors.admin_secret.message}</p>
+                                )}
                                 <p className="text-[10px] text-muted-foreground">
                                     * This code is required to authorize the creation of an admin account.
                                 </p>

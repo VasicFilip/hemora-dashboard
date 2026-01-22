@@ -65,6 +65,7 @@ export interface MarkerInput {
 
 export interface ReportDetailResponse {
   id: string
+  analysis_id: string
   lab_test_id: string
   patient_id: string
   status: string
@@ -143,6 +144,7 @@ export interface AnalysisUploadRequest {
   test_date?: string
   notes?: string
   mimetype: string
+  preferred_language?: string
 }
 
 export interface AnalysisUploadResponse {
@@ -178,6 +180,7 @@ export interface AnalysisResponse {
   status: string
   original_filename?: string
   mimetype?: string
+  preferred_language?: string
   lab_name?: string
   test_date?: string
   notes?: string

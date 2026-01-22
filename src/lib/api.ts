@@ -450,8 +450,8 @@ export const api = {
   getAnalysisResult: (analysisId: string, view: 'patient' | 'clinician' = 'patient') =>
     apiRequest<AnalysisResultResponse>(`/api/analyses/${analysisId}/result?view=${view}`),
 
-  downloadAnalysisPdf: async (analysisId: string, view: 'patient' | 'clinician' = 'patient') => {
-    const url = `${API_BASE_URL}/api/analyses/${analysisId}/pdf?view=${view}`
+  downloadAnalysisPdf: async (analysisId: string, view: 'patient' | 'clinician' = 'patient', lang: string = 'de') => {
+    const url = `${API_BASE_URL}/api/analyses/${analysisId}/pdf?view=${view}&lang=${lang}`
     const token = getAuthToken()
 
     const response = await fetch(url, {
@@ -637,8 +637,8 @@ export const api = {
   // REPORTS - PDF Generation
   // ============================================================================
 
-  downloadReportPdf: async (reportId: string, view: 'patient' | 'clinician' = 'patient') => {
-    const url = `${API_BASE_URL}/api/reports/${reportId}/pdf?view=${view}`
+  downloadReportPdf: async (reportId: string, view: 'patient' | 'clinician' = 'patient', lang: string = 'de') => {
+    const url = `${API_BASE_URL}/api/reports/${reportId}/pdf?view=${view}&lang=${lang}`
     const token = getAuthToken()
 
     const response = await fetch(url, {

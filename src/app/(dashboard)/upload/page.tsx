@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useDropzone } from "react-dropzone"
+import { z } from "zod"
 import {
   Upload, FileText, CheckCircle, AlertCircle, X, Loader2, ArrowRight, Dna,
   Activity, Pill, Stethoscope, Wine, Cigarette, Dumbbell,
@@ -52,13 +53,56 @@ const steps: UploadStep[] = [
   { id: 4, title: "Get Report", description: "View results", completed: false }
 ]
 
+// Zod Schemas
+const uploadPatientSchema = z.object({
+  firstName: z.string().min(2, "First name must be at least 2 characters").trim(),
+  lastName: z.string().min(2, "Last name must be at least 2 characters").trim(),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")).transform(v => v === "" ? undefined : v),
+  gender: z.enum(["Male", "Female", "Other"]),
+})
+
+const uploadContextSchema = z.object({
+  weight_kg: z.number().positive("Weight must be positive").optional(),
+  height_cm: z.number().positive("Height must be positive").optional(),
+  body_type: z.string().optional(),
+  smoker: z.string().optional(),
+  pack_years: z.number().nonnegative().optional(),
+  alcohol: z.string().optional(),
+  alcohol_frequency: z.string().optional(),
+  sport: z.string().optional(),
+  sport_frequency: z.string().optional(),
+  conditions: z.string().max(1000, "Conditions text too long").trim().optional(),
+  medications: z.string().max(1000, "Medications text too long").trim().optional(),
+  notes: z.string().max(2000, "Notes text too long").trim().optional(),
+})
+
+const SUPPORTED_LANGUAGES = [
+  { code: "de", label: "German", flag: "🇩🇪" },
+  { code: "en", label: "English", flag: "🇺🇸" },
+  { code: "fr", label: "French", flag: "🇫🇷" },
+  { code: "it", label: "Italian", flag: "🇮🇹" },
+  { code: "tr", label: "Turkish", flag: "🇹🇷" },
+  { code: "es", label: "Spanish", flag: "🇪🇸" },
+  { code: "pt", label: "Portuguese", flag: "🇵🇹" },
+  { code: "ar", label: "Arabic (RTL)", flag: "🇸🇦" },
+  { code: "fa", label: "Persian (RTL)", flag: "🇮🇷" },
+  { code: "ku", label: "Kurdish (RTL)", flag: "☀️" },
+  { code: "ru", label: "Russian", flag: "🇷🇺" },
+  { code: "pl", label: "Polish", flag: "🇵🇱" },
+  { code: "ro", label: "Romanian", flag: "🇷🇴" },
+  { code: "zh", label: "Chinese", flag: "🇨🇳" },
+  { code: "hu", label: "Hungarian", flag: "🇭🇺" },
+]
+
 export default function UploadPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [analysisId, setAnalysisId] = useState<string | null>(null)
   const [selectedPatientId, setSelectedPatientId] = useState<string>("")
+  const [preferredLanguage, setPreferredLanguage] = useState<string>("de")
   const [isCreatingPatient, setIsCreatingPatient] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   // API Hooks
   const { data: patientsData, isLoading: isLoadingPatients } = usePatients({ page_size: 100 })
@@ -102,12 +146,6 @@ export default function UploadPage() {
     notes: "",
   })
 
-  // Extra UI fields not in schema
-  const [extraFeatures, setExtraFeatures] = useState({
-    ethnicity: "",
-    language: ""
-  })
-
   // Patient detailed profile (DOB, Gender, etc.)
   const [patientProfileMeta, setPatientProfileMeta] = useState<{
     dateOfBirth: string,
@@ -142,7 +180,27 @@ export default function UploadPage() {
   // Watch analysisData to populate localMarkers
   useEffect(() => {
     if (analysisData?.extracted_json?.markers) {
-      setLocalMarkers(analysisData.extracted_json.markers)
+      // Parse ref_range into ref_min and ref_max if needed
+      const processedMarkers = analysisData.extracted_json.markers.map((m: any) => {
+        let ref_min = m.ref_min ?? m.reference_min ?? m.ref_low
+        let ref_max = m.ref_max ?? m.reference_max ?? m.ref_high
+
+        // If min/max are still undefined, try to parse from ref_range
+        if ((ref_min === undefined || ref_max === undefined) && m.ref_range) {
+          const parts = m.ref_range.split('-').map((s: string) => parseFloat(s.trim()))
+          if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            ref_min = parts[0]
+            ref_max = parts[1]
+          }
+        }
+
+        return {
+          ...m,
+          ref_min,
+          ref_max
+        }
+      })
+      setLocalMarkers(processedMarkers)
     }
   }, [analysisData])
 
@@ -193,7 +251,8 @@ export default function UploadPage() {
       const regData = await registerAnalysisMutation.mutateAsync({
         file_path: urlData.file_path,
         patient_id: pId,
-        mimetype: file.type
+        mimetype: file.type,
+        preferred_language: preferredLanguage
       })
 
       setAnalysisId(regData.analysis_id)
@@ -201,14 +260,25 @@ export default function UploadPage() {
       showToast.success("Upload successful", "Extraction has started in background")
     } catch (error) {
       showToast.apiError(error, "Process failed")
+    } finally {
+      setIsProcessing(false)
     }
   }
 
   const handlePatientSubmit = async () => {
+    if (isProcessing) return
     try {
+      setIsProcessing(true)
       let pId = selectedPatientId
       if (isCreatingPatient) {
-        const newPatient = await createPatientMutation.mutateAsync(patientForm)
+        // Validate Patient Form
+        const validation = uploadPatientSchema.safeParse(patientForm)
+        if (!validation.success) {
+          showToast.error("Validation Error", validation.error.issues[0].message)
+          return
+        }
+
+        const newPatient = await createPatientMutation.mutateAsync(validation.data as any) // Cast as any because schema transforms might slightly mismatch strict type but are compatible
         pId = newPatient.id
         setSelectedPatientId(pId)
       }
@@ -223,17 +293,31 @@ export default function UploadPage() {
       }
     } catch (error) {
       showToast.apiError(error, "Failed to save patient")
+      setIsProcessing(false)
     }
   }
 
   const handleContextSubmit = async () => {
-    if (!analysisId) return
+    if (!analysisId || isProcessing) return
     try {
-      // Append extra UI fields to notes for backend
-      let noteContent = contextForm.notes || ""
-      if (extraFeatures.ethnicity) noteContent += `\nEthnicity: ${extraFeatures.ethnicity}`
-      if (extraFeatures.language) noteContent += `\nPreferred Language: ${extraFeatures.language}`
+      setIsProcessing(true)
+      // Validate Context Form
+      const validation = uploadContextSchema.safeParse({
+        ...contextForm,
+        // Pre-convert strings to numbers for validation if they are set
+        weight_kg: contextForm.weight_kg ? Number(contextForm.weight_kg) : undefined,
+        height_cm: contextForm.height_cm ? Number(contextForm.height_cm) : undefined,
+        pack_years: contextForm.pack_years ? Number(contextForm.pack_years) : undefined,
+      })
 
+      if (!validation.success) {
+        showToast.error("Validation Error", validation.error.issues[0].message)
+        return
+      }
+
+      // Append extra UI fields to notes for backend
+      // ... rest of logic
+      let noteContent = contextForm.notes || ""
       // Sanitize/Format payload
       const payload: AnalysisContextCreate = {
         ...contextForm,
@@ -251,6 +335,8 @@ export default function UploadPage() {
       setCurrentStep(3)
     } catch (error) {
       showToast.apiError(error, "Failed to save profile data")
+    } finally {
+      setIsProcessing(false)
     }
   }
 
@@ -284,8 +370,9 @@ export default function UploadPage() {
   }
 
   const handleAnalysisTrigger = async () => {
-    if (!analysisId) return
+    if (!analysisId || isProcessing) return
     try {
+      setIsProcessing(true)
       // First save markers to be sure
       await updateExtractedMutation.mutateAsync({
         extracted_json: {
@@ -297,6 +384,8 @@ export default function UploadPage() {
       showToast.success("Analysis started", "We'll redirect you shortly")
     } catch (error) {
       showToast.apiError(error, "Failed to start analysis")
+    } finally {
+      setIsProcessing(false)
     }
   }
 
@@ -310,6 +399,8 @@ export default function UploadPage() {
     })
     return groups
   }, [localMarkers])
+
+  console.log("groupedMarkers", groupedMarkers)
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-5xl">
@@ -480,6 +571,35 @@ export default function UploadPage() {
                 )}
               </div>
 
+              {/* Language Selection Segment */}
+              <div className="space-y-4 pt-4">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-primary" />
+                  <Label className="text-lg font-medium">Report Language</Label>
+                </div>
+                <Select
+                  value={preferredLanguage}
+                  onValueChange={setPreferredLanguage}
+                >
+                  <SelectTrigger className="h-12 border-2 focus:border-primary/50 transition-all">
+                    <SelectValue placeholder="Select report language..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {SUPPORTED_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        <span className="flex items-center gap-2">
+                          <span className="text-lg">{lang.flag}</span>
+                          <span>{lang.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground ml-1">
+                  This sets the LLM simplification language and PDF layout (RTL support for Arabic/Persian/Kurdish).
+                </p>
+              </div>
+
               {/* File Upload Segment */}
               <div className="space-y-4 pt-4">
                 <Label className="text-lg font-medium">Test Report</Label>
@@ -541,10 +661,10 @@ export default function UploadPage() {
               <Button
                 size="lg"
                 className="h-12 px-10 text-lg shadow-lg shadow-primary/20 transition-all hover:translate-x-1"
-                disabled={!uploadedFile || (!selectedPatientId && !isCreatingPatient) || registerAnalysisMutation.isPending}
+                disabled={!uploadedFile || (!selectedPatientId && !isCreatingPatient) || registerAnalysisMutation.isPending || createPatientMutation.isPending || isProcessing}
                 onClick={handlePatientSubmit}
               >
-                {registerAnalysisMutation.isPending ? (
+                {registerAnalysisMutation.isPending || createPatientMutation.isPending || isProcessing ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Processing...
@@ -577,7 +697,7 @@ export default function UploadPage() {
                 )}
               </CardHeader>
               <CardContent className="p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                   {/* Bio Data Section */}
                   <div className="space-y-6">
@@ -626,41 +746,7 @@ export default function UploadPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-wider text-xs">
-                      <Globe className="h-4 w-4" />
-                      Localization
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Ethnicity</Label>
-                        <Select onValueChange={(v) => setExtraFeatures({ ...extraFeatures, ethnicity: v })} value={extraFeatures.ethnicity}>
-                          <SelectTrigger className="h-11 border-muted-foreground/30"><SelectValue placeholder="Select ethnicity" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="caucasian">Caucasian</SelectItem>
-                            <SelectItem value="asian">Asian</SelectItem>
-                            <SelectItem value="african">African</SelectItem>
-                            <SelectItem value="hispanic">Hispanic</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Preferred Language</Label>
-                        <Select onValueChange={(v) => setExtraFeatures({ ...extraFeatures, language: v })} value={extraFeatures.language}>
-                          <SelectTrigger className="h-11 border-muted-foreground/30"><SelectValue placeholder="Select language" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="en">English</SelectItem>
-                            <SelectItem value="de">German</SelectItem>
-                            <SelectItem value="es">Spanish</SelectItem>
-                            <SelectItem value="fr">French</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
 
-                  <Separator />
 
                   {/* Physical Metrics */}
                   <div className="space-y-6">
@@ -860,9 +946,9 @@ export default function UploadPage() {
                     size="lg"
                     className="h-12 px-10 text-lg shadow-lg shadow-primary/20"
                     onClick={handleContextSubmit}
-                    disabled={updateContextMutation.isPending}
+                    disabled={updateContextMutation.isPending || isProcessing}
                   >
-                    {updateContextMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                    {updateContextMutation.isPending || isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                     Confirm Profile
                     <ChevronRight className="ml-2 h-5 w-5" />
                   </Button>
@@ -989,16 +1075,16 @@ export default function UploadPage() {
                                   <div className="flex items-center gap-2">
                                     <Input
                                       className="h-11 text-center bg-muted/20 border-none"
-                                      value={marker.reference_min ?? ''}
+                                      value={marker.ref_min ?? ''}
                                       placeholder="Min"
-                                      onChange={(e) => handleUpdateMarker(marker.originalIndex, "reference_min", e.target.value)}
+                                      onChange={(e) => handleUpdateMarker(marker.originalIndex, "ref_min", e.target.value)}
                                     />
                                     <span className="text-muted-foreground font-bold">-</span>
                                     <Input
                                       className="h-11 text-center bg-muted/20 border-none"
-                                      value={marker.reference_max ?? ''}
+                                      value={marker.ref_max ?? ''}
                                       placeholder="Max"
-                                      onChange={(e) => handleUpdateMarker(marker.originalIndex, "reference_max", e.target.value)}
+                                      onChange={(e) => handleUpdateMarker(marker.originalIndex, "ref_max", e.target.value)}
                                     />
                                   </div>
                                 </div>
@@ -1058,9 +1144,9 @@ export default function UploadPage() {
                     size="lg"
                     className="h-14 px-12 text-xl font-bold shadow-2xl shadow-primary/30 gap-2"
                     onClick={handleAnalysisTrigger}
-                    disabled={triggerAnalysisMutation.isPending || !analysisId}
+                    disabled={triggerAnalysisMutation.isPending || !analysisId || isProcessing}
                   >
-                    {triggerAnalysisMutation.isPending ? <Loader2 className="h-7 w-7 animate-spin" /> : <Beaker className="h-7 w-7" />}
+                    {triggerAnalysisMutation.isPending || isProcessing ? <Loader2 className="h-7 w-7 animate-spin" /> : <Beaker className="h-7 w-7" />}
                     Start Analysis
                   </Button>
                 </div>

@@ -28,11 +28,13 @@ import Link from "next/link"
 import { useCreatePatient } from "@/lib/hooks"
 
 const patientSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  firstName: z.string().min(2, "First name must be at least 2 characters").trim(),
+  lastName: z.string().min(2, "Last name must be at least 2 characters").trim(),
   email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
-  phone: z.string().optional(),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  phone: z.string().regex(/^\+?[0-9\s-]{5,}$/, "Invalid phone format").optional().or(z.literal("")),
+  dateOfBirth: z.string().min(1, "Date of birth is required").refine((date) => new Date(date) <= new Date(), {
+    message: "Date of birth cannot be in the future",
+  }),
   gender: z.enum(["Male", "Female", "Other"], {
     message: "Please select a gender",
   }),
@@ -67,7 +69,7 @@ export default function NewPatientPage() {
         phone: data.phone || undefined,
         dateOfBirth: data.dateOfBirth,
         gender: data.gender,
-        address: data.address || undefined,
+        address: data.address?.trim() || undefined,
       })
       router.push('/patients')
     } catch (error) {
@@ -145,10 +147,10 @@ export default function NewPatientPage() {
                     <FormItem>
                       <FormLabel>Email Address</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="patient@email.com" 
-                          {...field} 
+                        <Input
+                          type="email"
+                          placeholder="patient@email.com"
+                          {...field}
                         />
                       </FormControl>
                       <FormDescription>
@@ -167,9 +169,9 @@ export default function NewPatientPage() {
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="+1 (555) 123-4567" 
-                          {...field} 
+                        <Input
+                          placeholder="+1 (555) 123-4567"
+                          {...field}
                         />
                       </FormControl>
                       <FormDescription>
@@ -189,9 +191,9 @@ export default function NewPatientPage() {
                       <FormItem>
                         <FormLabel>Date of Birth *</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="date" 
-                            {...field} 
+                          <Input
+                            type="date"
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />

@@ -22,10 +22,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, PlusCircle } from "lucide-react"
 
 const formSchema = z.object({
-    name: z.string().min(2, "Clinic name must be at least 2 characters"),
-    email: z.string().email("Invalid email address"),
-    phone: z.string().min(5, "Phone number is required"),
-    address: z.string().min(5, "Address must be at least 5 characters"),
+    name: z.string().min(2, "Clinic name must be at least 2 characters").trim(),
+    email: z.string().email("Invalid email address").trim(),
+    phone: z.string().regex(/^\+?[0-9\s-]{5,}$/, "Invalid phone format (e.g. +123 456)"),
+    address: z.string().min(5, "Address must be at least 5 characters").max(200, "Address is too long").trim(),
 })
 
 export default function OnboardingPage() {

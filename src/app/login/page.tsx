@@ -2,6 +2,9 @@
 
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,21 +13,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Activity, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+const loginSchema = z.object({
+    email: z.string().email('Invalid email address').trim(),
+    password: z.string().min(1, 'Password is required'),
+})
+
+type LoginFormValues = z.infer<typeof loginSchema>
+
 function LoginForm() {
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const { login } = useAuth()
     const router = useRouter()
     const searchParams = useSearchParams()
     const from = searchParams.get('from') || '/'
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const form = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: '',
+            password: '',
+        },
+    })
+
+    const onSubmit = async (data: LoginFormValues) => {
         setIsLoading(true)
 
         try {
-            await login(email, password)
+            await login(data.email, data.password)
             // Redirect to the page they were trying to access, or home
             router.push(from)
         } catch (error: any) {
@@ -49,18 +64,20 @@ function LoginForm() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input
                                 id="email"
                                 type="email"
                                 placeholder="clinician@hemora.ch"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
+                                {...form.register('email')}
                                 disabled={isLoading}
+                                autoComplete="email"
                             />
+                            {form.formState.errors.email && (
+                                <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="password">Password</Label>
@@ -68,11 +85,13 @@ function LoginForm() {
                                 id="password"
                                 type="password"
                                 placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
+                                {...form.register('password')}
                                 disabled={isLoading}
+                                autoComplete="current-password"
                             />
+                            {form.formState.errors.password && (
+                                <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+                            )}
                         </div>
                         <Button type="submit" className="w-full" disabled={isLoading}>
                             {isLoading ? (

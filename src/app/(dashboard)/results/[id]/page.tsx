@@ -31,11 +31,13 @@ export default function ResultsPage() {
     try {
       setIsDownloading(true)
       toast.info("Generating high-quality PDF...")
-      const blob = await api.downloadAnalysisPdf(id, viewMode)
+      // Use stored language or default to German if missing (legacy)
+      const lang = analysisMeta?.preferred_language || "de"
+      const blob = await api.downloadAnalysisPdf(id, viewMode, lang)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `hemora_report_${id}_${viewMode}.pdf`
+      a.download = `hemora_report_${id}_${viewMode}_${lang}.pdf`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -66,12 +68,57 @@ export default function ResultsPage() {
   // Derived Data
   const analysisResult = resultData?.result || {}
 
+  console.log("analysisResult-", viewMode, analysisResult)
+
   // Extract biomarkers from panels if not at root
   const panels = analysisResult?.panels || []
-  const biomarkers = analysisResult?.biomarkers || panels.flatMap((p: any) => p.biomarkers || p.markers || []) || []
+  const biomarkers = (
+    analysisResult?.biomarkers ||
+    analysisResult?.key_markers ||
+    panels.flatMap((p: any) => p.biomarkers || p.markers || []) ||
+    []
+  ).map((m: any) => {
+    // Standardize status/flag
+    const status = m.status || m.flag || 'Normal'
 
-  const summary = analysisResult?.summary || analysisResult?.overview?.interpretation || "No summary available."
-  const abnormalities = analysisResult?.key_findings || analysisResult?.overview?.key_findings || analysisResult?.abnormalities || []
+    // Parse ref_range if min/max are missing
+    let ref_min = m.ref_min ?? m.ref_low
+    let ref_max = m.ref_max ?? m.ref_high
+    if (ref_min === undefined && ref_max === undefined && m.ref_range) {
+      const parts = m.ref_range.split('-').map((s: string) => parseFloat(s.trim()))
+      if (parts.length === 2) {
+        ref_min = parts[0]
+        ref_max = parts[1]
+      }
+    }
+
+    return {
+      ...m,
+      status: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase(),
+      description: m.description || m.why_it_matters || "",
+      ref_min,
+      ref_max
+    }
+  })
+
+  // Robust Summary Extraction
+  const rawSummary = analysisResult?.summary || analysisResult?.overview?.interpretation || "No summary available."
+  const summary = typeof rawSummary === 'string'
+    ? rawSummary
+    : (rawSummary?.headline || rawSummary?.interpretation || "Analysis complete. Review details below.")
+
+  const takeaways = (typeof rawSummary === 'object' && rawSummary?.top_takeaways) || []
+
+  const abnormalities = analysisResult?.key_findings ||
+    analysisResult?.overview?.key_findings ||
+    analysisResult?.abnormalities ||
+    (analysisResult?.insights || []).map((ins: any) => ({
+      title: ins.title,
+      description: ins.explanation || ins.description,
+      signal: ins.signal || (ins.title?.toLowerCase().includes('empfehlung') ? 'neutral' : 'attention')
+    })) || []
+
+  const confidenceNotes = analysisResult?.confidence_notes || []
 
   // Clear previous toasts on mount
   useEffect(() => {
@@ -86,7 +133,7 @@ export default function ResultsPage() {
   )
 
   const abnormalCount = biomarkers.filter((b: any) =>
-    b.status === 'High' || b.status === 'Low' || b.status === 'Critical'
+    ['high', 'low', 'critical'].includes(b.status?.toLowerCase())
   ).length
 
   if (isLoading) {
@@ -189,10 +236,12 @@ export default function ResultsPage() {
               </button>
             </div>
 
-            <Button size="sm" className="hidden sm:flex gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20 transition-all active:scale-95" onClick={handleDownload} disabled={isDownloading}>
-              {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              {isDownloading ? 'Generating PDF...' : 'Download Report'}
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button size="sm" className="hidden sm:flex gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20 transition-all active:scale-95" onClick={handleDownload} disabled={isDownloading}>
+                {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {isDownloading ? 'Generating...' : 'Download Report'}
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -204,8 +253,15 @@ export default function ResultsPage() {
           <div className="flex flex-col md:flex-row gap-8 items-start">
             <div className="flex-1 space-y-4">
               <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Overview</h2>
-              <div className="prose prose-sm md:prose-base dark:prose-invert text-gray-600 dark:text-gray-300 leading-relaxed">
-                {summary}
+              <div className="prose prose-sm md:prose-base dark:prose-invert text-gray-600 dark:text-gray-300 leading-relaxed space-y-4">
+                <p>{summary}</p>
+                {takeaways.length > 0 && (
+                  <ul className="list-disc pl-5 mt-4 space-y-2">
+                    {takeaways.map((takeaway: string, i: number) => (
+                      <li key={i}>{takeaway}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
 
@@ -220,17 +276,21 @@ export default function ResultsPage() {
                     stroke="currentColor"
                     className="text-indigo-600"
                     strokeWidth="8"
-                    strokeDasharray={`${((analysisResult?.scan?.in_range_percent || 80) * 2.83)} 283`}
+                    strokeDasharray={`${((analysisResult?.scan?.in_range_percent || (biomarkers.length > 0 ? Math.round(((biomarkers.length - abnormalCount) / biomarkers.length) * 100) : 0)) * 2.83)} 283`}
                     strokeLinecap="round"
                   />
                 </svg>
                 <div className="absolute flex flex-col items-center">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">{analysisResult?.scan?.in_range_percent || 0}%</span>
+                  <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {analysisResult?.scan?.in_range_percent || (biomarkers.length > 0 ? Math.round(((biomarkers.length - abnormalCount) / biomarkers.length) * 100) : 0)}%
+                  </span>
                 </div>
               </div>
               <div className="mt-4 text-center">
                 <div className="text-sm font-medium text-gray-900 dark:text-white">Biomarkers in Range</div>
-                <div className="text-xs text-gray-500">{analysisResult?.scan?.in_range_count || 0} of {analysisResult?.scan?.total_biomarkers || 0} total</div>
+                <div className="text-xs text-gray-500">
+                  {analysisResult?.scan?.in_range_count || (biomarkers.length - abnormalCount)} of {analysisResult?.scan?.total_biomarkers || biomarkers.length} total
+                </div>
               </div>
             </div>
           </div>
@@ -264,7 +324,7 @@ export default function ResultsPage() {
 
         {/* Panels Loop */}
         <div className="space-y-12">
-          {panels.length > 0 ? panels.map((panel: any, idx: number) => (
+          {panels.length > 0 && panels.map((panel: any, idx: number) => (
             <section key={idx} className="space-y-6">
               {/* Panel Header */}
               <div className="flex items-center justify-between pb-4 border-b">
@@ -287,9 +347,21 @@ export default function ResultsPage() {
                   const isNormal = marker.status?.toLowerCase() === 'normal'
                   const isAbnormal = !isNormal
 
-                  // Calculate position for range bar
-                  const min = marker.ref_min || 0
-                  const max = marker.ref_max || 100
+                  // Parse ref_range if min/max are missing
+                  let min = marker.ref_min ?? marker.ref_low
+                  let max = marker.ref_max ?? marker.ref_high
+                  if (min === undefined && max === undefined && marker.ref_range) {
+                    const parts = marker.ref_range.split('-').map((s: string) => parseFloat(s.trim()))
+                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                      min = parts[0]
+                      max = parts[1]
+                    }
+                  }
+
+                  // Fallback to defaults if still undefined
+                  min = min ?? 0
+                  max = max ?? 100
+
                   const val = marker.value || 0
                   let pos = 50
 
@@ -371,13 +443,23 @@ export default function ResultsPage() {
                 })}
               </div>
             </section>
-          )) : (
-            // Fallback if no panels structure
-            <div className="text-center py-20 bg-white dark:bg-card rounded-xl border border-dashed">
-              <p className="text-muted-foreground">No detailed biomarker panels found.</p>
-            </div>
-          )}
+          ))}
         </div>
+
+        {/* Confidence Notes */}
+        {confidenceNotes.length > 0 && (
+          <section className="bg-gray-50 dark:bg-gray-900/40 rounded-xl p-6 border border-dashed text-center space-y-3">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">Analysis Notes & Disclaimers</h3>
+            <div className="flex flex-wrap justify-center gap-4">
+              {confidenceNotes.map((note: any, i: number) => (
+                <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className={`h-1.5 w-1.5 rounded-full ${note.level === 'high' ? 'bg-indigo-500' : 'bg-gray-400'}`} />
+                  {note.note}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
       </main>
     </div>
