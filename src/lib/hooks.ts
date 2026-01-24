@@ -188,9 +188,9 @@ export function useAnalysisStatus(analysisId: string) {
     refetchInterval: (query) => {
       const data = query.state.data as AnalysisStatusResponse | undefined
       if (!data) return false
-      // Poll if extracting or analyzing
+      // Poll if extracting or analyzing (every 5 seconds to reduce server load)
       if (data.status === 'extracting' || data.status === 'analyzing' || data.status === 'uploaded') {
-        return 2000
+        return 15000
       }
       return false
     }

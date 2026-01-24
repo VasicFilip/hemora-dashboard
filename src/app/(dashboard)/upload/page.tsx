@@ -46,6 +46,36 @@ interface UploadStep {
   completed: boolean
 }
 
+// Compact Premium Loading Overlay
+function LoadingOverlay({ message, subMessage }: { message: string, subMessage?: string }) {
+  return (
+    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[2px] animate-in fade-in duration-300">
+      <div className="relative p-8 rounded-2xl bg-card border shadow-2xl shadow-primary/10 max-w-sm w-full mx-4 flex flex-col items-center text-center space-y-5">
+
+        {/* Animated Gradient Ring Spinner */}
+        <div className="relative h-16 w-16">
+          <div className="absolute inset-0 rounded-full border-[3px] border-primary/20"></div>
+          <div className="absolute inset-0 rounded-full border-[3px] border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
+          <div className="absolute inset-2 rounded-full border-[3px] border-primary/10"></div>
+          <div className="absolute inset-2 rounded-full border-[3px] border-b-primary/60 border-t-transparent border-l-transparent border-r-transparent animate-[spin_1.5s_linear_infinite_reverse]"></div>
+          <Beaker className="absolute inset-0 m-auto h-6 w-6 text-primary animate-pulse" />
+        </div>
+
+        <div className="space-y-1">
+          <h3 className="text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            {message}
+          </h3>
+          {subMessage && (
+            <p className="text-sm text-muted-foreground animate-pulse">
+              {subMessage}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const steps: UploadStep[] = [
   { id: 1, title: "Upload Your Test", description: "PDF or Image (Max 10MB)", completed: false },
   { id: 2, title: "Add Profile Data", description: "Patient and medical info", completed: false },
@@ -84,12 +114,17 @@ const SUPPORTED_LANGUAGES = [
   { code: "tr", label: "Turkish", flag: "🇹🇷" },
   { code: "es", label: "Spanish", flag: "🇪🇸" },
   { code: "pt", label: "Portuguese", flag: "🇵🇹" },
-  { code: "ar", label: "Arabic (RTL)", flag: "🇸🇦" },
-  { code: "fa", label: "Persian (RTL)", flag: "🇮🇷" },
-  { code: "ku", label: "Kurdish (RTL)", flag: "☀️" },
+  { code: "sq", label: "Albanian", flag: "🇦🇱" },
+  { code: "sr", label: "Serbian", flag: "🇷🇸" },
+  { code: "hr", label: "Croatian", flag: "🇭🇷" },
+  { code: "bs", label: "Bosnian", flag: "�🇦" },
+  { code: "ar", label: "Arabic (RTL)", flag: "��" },
+  { code: "ta", label: "Tamil", flag: "🇱🇰" },
   { code: "ru", label: "Russian", flag: "🇷🇺" },
   { code: "pl", label: "Polish", flag: "🇵🇱" },
   { code: "ro", label: "Romanian", flag: "🇷🇴" },
+  { code: "fa", label: "Persian (RTL)", flag: "🇮🇷" },
+  { code: "ku", label: "Kurdish (RTL)", flag: "☀️" },
   { code: "zh", label: "Chinese", flag: "🇨🇳" },
   { code: "hu", label: "Hungarian", flag: "🇭🇺" },
 ]
@@ -145,6 +180,27 @@ export default function UploadPage() {
     medications: "",
     notes: "",
   })
+
+  // Add styles for the gradient animation
+  // In a real app this would go in global css but inline for portability here
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.innerHTML = `
+      @keyframes gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .animate-gradient {
+        background-size: 200% 200%;
+        animation: gradient 3s ease infinite;
+      }
+    `
+    document.head.appendChild(style)
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
 
   // Patient detailed profile (DOB, Gender, etc.)
   const [patientProfileMeta, setPatientProfileMeta] = useState<{
@@ -211,6 +267,8 @@ export default function UploadPage() {
       // Actually, if we are in Step 2 and extraction finishes, we just wait for user to confirm profile.
     }
     if (analysisStatus?.status === AnalysisStatus.ANALYZED && currentStep === 3) {
+      // Reset processing state before redirect
+      setIsProcessing(false)
       router.push(`/results/${analysisId}`)
     }
   }, [analysisStatus, currentStep, analysisId, router])
@@ -382,10 +440,10 @@ export default function UploadPage() {
       })
       await triggerAnalysisMutation.mutateAsync()
       showToast.success("Analysis started", "We'll redirect you shortly")
+      // Note: isProcessing will stay true until redirect happens in useEffect
     } catch (error) {
       showToast.apiError(error, "Failed to start analysis")
-    } finally {
-      setIsProcessing(false)
+      setIsProcessing(false) // Only reset on error
     }
   }
 
@@ -456,7 +514,13 @@ export default function UploadPage() {
 
         {/* STEP 1: UPLOAD & PATIENT SELECT */}
         {currentStep === 1 && (
-          <Card className="border-primary/10 shadow-xl shadow-primary/5 overflow-hidden border-2 p-0">
+          <Card className="border-primary/10 shadow-xl shadow-primary/5 overflow-hidden border-2 p-0 relative">
+            {(isProcessing || registerAnalysisMutation.isPending || createPatientMutation.isPending) && (
+              <LoadingOverlay
+                message={createPatientMutation.isPending ? "Creating Patient Profile..." : "Processing Upload..."}
+                subMessage="Encrypting and analyzing document structure"
+              />
+            )}
             <CardHeader className="bg-primary/[0.02] border-b border-primary/5 pb-8">
               <CardTitle className="text-2xl flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
@@ -683,7 +747,13 @@ export default function UploadPage() {
         {/* STEP 2: PROFILE DATA (Matching Screenshot 1) */}
         {currentStep === 2 && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-            <Card className="border-primary/10 shadow-xl overflow-hidden border-2">
+            <Card className="border-primary/10 shadow-xl overflow-hidden border-2 relative">
+              {isProcessing && (
+                <LoadingOverlay
+                  message="Updating Health Profile..."
+                  subMessage="Syncing your biological data context"
+                />
+              )}
               <CardHeader className="bg-primary/[0.02] border-b border-primary/5 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-2xl">Add Profile Data</CardTitle>
@@ -960,7 +1030,32 @@ export default function UploadPage() {
 
         {/* STEP 3: UPDATE DATA (Marker Verification - Matching Screenshot 2 & 3) */}
         {currentStep === 3 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8 relative">
+            {isProcessing && (
+              <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-500">
+                <div className="flex flex-col items-center gap-8 max-w-md text-center p-8">
+                  <div className="h-32 w-32 relative">
+                    <div className="absolute inset-0 rounded-full border-8 border-primary/10"></div>
+                    <div className="absolute inset-0 rounded-full border-8 border-t-primary border-r-primary/50 border-b-transparent border-l-transparent animate-[spin_3s_linear_infinite]"></div>
+                    <div className="absolute inset-4 rounded-full border-4 border-indigo-500/20"></div>
+                    <div className="absolute inset-4 rounded-full border-4 border-b-indigo-500 border-l-transparent border-t-transparent border-r-transparent animate-[spin_2s_linear_infinite_reverse]"></div>
+                    <div className="absolute inset-0 m-auto flex items-center justify-center">
+                      <Activity className="h-10 w-10 text-primary animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-primary via-indigo-500 to-primary bg-clip-text text-transparent animate-gradient">
+                      Starting Deep Analysis
+                    </h2>
+                    <p className="text-lg text-muted-foreground">
+                      Our AI is performing a comprehensive clinical evaluation of your biomarkers against 10,000+ medical studies.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Show Polling/Status if still extracting */}
 
             {/* Show Polling/Status if still extracting */}
             {analysisStatus?.status === AnalysisStatus.EXTRACTING || analysisStatus?.status === AnalysisStatus.UPLOADED ? (
