@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { usePatients, useReports, useLabTests, useUser } from "@/lib/hooks"
+import { useReports, useUser, useAnalyticsStats, useAnalyticsActivity, useAnalyticsRiskProfile } from "@/lib/hooks"
 import { TrendChart } from "@/components/charts/TrendChart"
 import { DistributionChart } from "@/components/charts/DistributionChart"
 import {
@@ -14,66 +14,57 @@ import {
   TrendingUp,
   Clock,
   AlertTriangle,
-  ArrowRight,
-  Loader2
+  ArrowRight
 } from "lucide-react"
 import Link from "next/link"
 
 export default function Dashboard() {
   const { data: user } = useUser()
-  const { data: patientsData, isLoading: patientsLoading } = usePatients({ page_size: 100 })
-  const { data: reportsData, isLoading: reportsLoading } = useReports({ page_size: 100 })
-  const { data: labTestsData, isLoading: labTestsLoading } = useLabTests({ page_size: 100 })
+  const { data: stats, isLoading: statsLoading } = useAnalyticsStats()
+  const { data: activityData, isLoading: activityLoading } = useAnalyticsActivity(30)
+  const { data: riskProfile, isLoading: riskLoading } = useAnalyticsRiskProfile()
+  const { data: reportsData, isLoading: reportsLoading } = useReports({ page_size: 10 })
 
-  const patients = patientsData?.data || []
   const reports = reportsData?.data || []
-  const labTests = labTestsData?.data || []
+  const isLoading = statsLoading || activityLoading || reportsLoading || riskLoading
 
-  const isLoading = patientsLoading || reportsLoading || labTestsLoading
-
-  // Calculate this week's analyses
-  const oneWeekAgo = new Date()
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-
-  const thisWeekAnalyses = labTests.filter(test =>
-    new Date(test.created_at) >= oneWeekAgo
-  ).length
-
-  // Calculate abnormal results (placeholder - would need actual status from reports)
-  const abnormalResults = Math.floor(reports.length * 0.15) // Estimate 15% abnormal
-
-  const recentAnalyses = labTests.slice(0, 5) // Get 5 most recent
   return (
-    <div className="flex flex-col space-y-6 p-6">
+    <div className="flex flex-col space-y-8 p-8 max-w-[1600px] mx-auto animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Clinical Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back, {user?.name || 'Dr. Clinician'}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            Clinical Overview
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Welcome back, {user?.name || 'Dr. Clinician'}. Here is what is happening today.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/upload">
-            <Activity className="mr-2 h-4 w-4" />
-            New Analysis
-          </Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="hidden sm:flex" asChild>
+            <Link href="/patients">View Patients</Link>
+          </Button>
+          <Button className="shadow-lg shadow-primary/20 transition-all hover:shadow-primary/40 active:scale-95" asChild>
+            <Link href="/upload">
+              <Activity className="mr-2 h-4 w-4" />
+              New Analysis
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
           <>
-            {/* Skeleton loaders for stats cards */}
             {[1, 2, 3, 4].map((i) => (
-              <Card key={i}>
+              <Card key={i} className="overflow-hidden border-none bg-secondary/30 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-10 w-20 mb-2" />
                   <Skeleton className="h-3 w-32" />
                 </CardContent>
               </Card>
@@ -81,51 +72,62 @@ export default function Dashboard() {
           </>
         ) : (
           <>
-            <Card>
+            <Card className="group border-none bg-gradient-to-br from-blue-500/10 to-blue-600/5 transition-all hover:shadow-xl hover:shadow-blue-500/10">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-blue-600/80 dark:text-blue-400/80">Total Patients</CardTitle>
+                <div className="rounded-full bg-blue-500/10 p-2 text-blue-600">
+                  <Users className="h-4 w-4" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{patients.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  Active patients in system
+                <div className="text-3xl font-bold tracking-tight">{stats?.total_patients || 0}</div>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                  Active in your organization
                 </p>
               </CardContent>
             </Card>
-            <Card>
+
+            <Card className="group border-none bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 transition-all hover:shadow-xl hover:shadow-emerald-500/10">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Analyses This Week</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-emerald-600/80 dark:text-emerald-400/80">New Analyses</CardTitle>
+                <div className="rounded-full bg-emerald-500/10 p-2 text-emerald-600">
+                  <FileText className="h-4 w-4" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{thisWeekAnalyses}</div>
-                <p className="text-xs text-muted-foreground">
-                  New tests processed
+                <div className="text-3xl font-bold tracking-tight">{stats?.analyses_this_month || 0}</div>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                  Processed this month
                 </p>
               </CardContent>
             </Card>
-            <Card>
+
+            <Card className="group border-none bg-gradient-to-br from-amber-500/10 to-amber-600/5 transition-all hover:shadow-xl hover:shadow-amber-500/10">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Abnormal Results</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-amber-600/80 dark:text-amber-400/80">Pending Review</CardTitle>
+                <div className="rounded-full bg-amber-500/10 p-2 text-amber-600">
+                  <Clock className="h-4 w-4" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{abnormalResults}</div>
-                <p className="text-xs text-muted-foreground">
-                  Requires attention
+                <div className="text-3xl font-bold tracking-tight">{stats?.pending_analyses || 0}</div>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                  Awaiting clinician attention
                 </p>
               </CardContent>
             </Card>
-            <Card>
+
+            <Card className="group border-none bg-gradient-to-br from-rose-500/10 to-rose-600/5 transition-all hover:shadow-xl hover:shadow-rose-500/10">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-rose-600/80 dark:text-rose-400/80">System Health</CardTitle>
+                <div className="rounded-full bg-rose-500/10 p-2 text-rose-600">
+                  <TrendingUp className="h-4 w-4" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{reports.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  Analysis reports generated
+                <div className="text-3xl font-bold tracking-tight">Active</div>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                  Engine operating normally
                 </p>
               </CardContent>
             </Card>
@@ -134,121 +136,166 @@ export default function Dashboard() {
       </div>
 
       {/* Analytics Section */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <div className="lg:col-span-4">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-7">
+        <Card className="lg:col-span-4 border-none bg-card/40 backdrop-blur-xl shadow-lg ring-1 ring-white/10 overflow-hidden">
           <TrendChart
-            data={reports}
-            title="Analysis Volume"
-            description="Number of analyses processed over time"
+            data={activityData || []}
+            title="Extraction Activity"
+            description="Daily analysis throughput across the system"
             dataKeys={[
-              { key: "count", label: "Analyses", color: "var(--chart-1)" }
+              { key: "value", label: "Tests Processed", color: "hsl(var(--primary))" }
             ]}
-            height={300}
+            height={350}
+            transformData={(data: any) => data.map((d: any) => ({ date: d.date, value: d.value }))}
           />
-        </div>
-        <div className="lg:col-span-3">
+        </Card>
+
+        <Card className="lg:col-span-3 border-none bg-card/40 backdrop-blur-xl shadow-lg ring-1 ring-white/10">
           <DistributionChart
-            data={reports}
-            title="Analysis Status"
-            description="Breakdown of analysis results"
-            groupByKey="status"
-            labelFormatter={(v: string) => v.charAt(0).toUpperCase() + v.slice(1)}
-            height={300}
+            data={riskProfile || []}
+            title="Health Distribution"
+            description="Breakdown of clinical findings by severity"
+            groupByKey="label"
+            labelFormatter={(v: string) => v}
+            height={350}
           />
-        </div>
+        </Card>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Analyses</CardTitle>
-            <CardDescription>Latest blood test interpretations</CardDescription>
+
+      {/* Bottom Section */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-lg ring-1 ring-white/10">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Recent Reports</CardTitle>
+              <CardDescription>Latest patient interpretations</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" className="hidden sm:flex" asChild>
+              <Link href="/reports">View All</Link>
+            </Button>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             {isLoading ? (
               <>
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center space-x-4">
                     <div className="min-w-0 flex-1 space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-48" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-3 w-1/4" />
                     </div>
-                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-6 w-20 rounded-full" />
                   </div>
                 ))}
               </>
             ) : reports.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <p className="text-sm">No analyses yet</p>
-                <p className="text-xs mt-1">Upload a blood test to get started</p>
+              <div className="text-center py-12 text-muted-foreground">
+                <div className="bg-secondary/20 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
+                  <FileText className="h-6 w-6 opacity-20" />
+                </div>
+                <p className="text-sm font-medium">No reports generated yet</p>
+                <p className="text-xs mt-1">Submit a blood test to begin</p>
               </div>
             ) : (
-              <>
-                {reports.slice(0, 3).map((report) => {
+              <div className="space-y-5">
+                {reports.slice(0, 4).map((report) => {
                   const patientName = report.patient
                     ? `${report.patient.firstName} ${report.patient.lastName}`
-                    : 'Unknown Patient'
-                  const testType = report.lab_test?.lab_name || report.source || 'Blood Test'
+                    : 'External Patient'
+                  const testType = report.source || 'Biochemical Panel'
                   const status = report.status?.toLowerCase() || 'normal'
 
-                  // Determine badge variant based on status
-                  let badgeVariant: "default" | "destructive" | "outline" | "secondary" = "outline"
+                  let badgeStyles = "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20"
                   let badgeText = "Normal"
 
                   if (status.includes('abnormal') || status.includes('critical')) {
-                    badgeVariant = "destructive"
-                    badgeText = "Abnormal"
+                    badgeStyles = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                    badgeText = "Action Reqd"
                   } else if (status.includes('borderline') || status.includes('review')) {
-                    badgeVariant = "secondary"
+                    badgeStyles = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
                     badgeText = "Review"
                   }
 
                   return (
-                    <div key={report.id} className="flex items-center space-x-4">
+                    <div key={report.id} className="flex items-center space-x-4 group cursor-pointer transition-colors hover:bg-white/5 p-2 rounded-lg -mx-2">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{patientName}</p>
-                        <p className="text-sm text-muted-foreground truncate">{testType}</p>
+                        <p className="text-sm font-semibold truncate leading-none mb-1.5">{patientName}</p>
+                        <p className="text-xs text-muted-foreground truncate uppercase tracking-tighter">{testType}</p>
                       </div>
-                      <Badge variant={badgeVariant}>{badgeText}</Badge>
+                      <Badge variant="outline" className={`font-bold px-2.5 py-0.5 rounded-full border shadow-sm ${badgeStyles}`}>
+                        {badgeText}
+                      </Badge>
                     </div>
                   )
                 })}
-              </>
+              </div>
             )}
-            <Button variant="outline" className="w-full" asChild>
+            <Button variant="secondary" className="w-full mt-2 font-semibold" asChild>
               <Link href="/patients">
-                View All Patients
+                Access All Patient Records
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common tasks and workflows</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button className="w-full justify-start" asChild>
-              <Link href="/patients/new">
-                <Users className="mr-2 h-4 w-4" />
-                Add New Patient
-              </Link>
-            </Button>
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link href="/upload">
-                <FileText className="mr-2 h-4 w-4" />
-                Upload Blood Test
-              </Link>
-            </Button>
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link href="/reports">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                View Reports
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Quick Actions Column */}
+        <div className="space-y-6">
+          <Card className="border-none bg-gradient-to-tr from-primary/10 to-primary/5 shadow-lg border-l-4 border-l-primary">
+            <CardHeader>
+              <CardTitle className="text-lg">Quick Workflows</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button className="justify-start h-auto py-3 bg-white/10 hover:bg-white/20 text-foreground border-none shadow-sm" variant="outline" asChild>
+                <Link href="/patients/new">
+                  <div className="flex flex-col items-start gap-0.5 text-left">
+                    <span className="flex items-center gap-2 font-bold"><Users className="h-4 w-4 text-blue-500" /> New Patient</span>
+                    <span className="text-[10px] text-muted-foreground">Register registration</span>
+                  </div>
+                </Link>
+              </Button>
+              <Button className="justify-start h-auto py-3 bg-white/10 hover:bg-white/20 text-foreground border-none shadow-sm" variant="outline" asChild>
+                <Link href="/upload">
+                  <div className="flex flex-col items-start gap-0.5 text-left">
+                    <span className="flex items-center gap-2 font-bold"><Activity className="h-4 w-4 text-emerald-500" /> Fast Scan</span>
+                    <span className="text-[10px] text-muted-foreground">PDF Extraction</span>
+                  </div>
+                </Link>
+              </Button>
+              <Button className="justify-start h-auto py-3 bg-white/10 hover:bg-white/20 text-foreground border-none shadow-sm" variant="outline" asChild>
+                <Link href="/analytics">
+                  <div className="flex flex-col items-start gap-0.5 text-left">
+                    <span className="flex items-center gap-2 font-bold"><TrendingUp className="h-4 w-4 text-indigo-500" /> Analytics</span>
+                    <span className="text-[10px] text-muted-foreground">Detailed insights</span>
+                  </div>
+                </Link>
+              </Button>
+              <Button className="justify-start h-auto py-3 bg-white/10 hover:bg-white/20 text-foreground border-none shadow-sm" variant="outline" asChild>
+                <Link href="/settings">
+                  <div className="flex flex-col items-start gap-0.5 text-left">
+                    <span className="flex items-center gap-2 font-bold"><FileText className="h-4 w-4 text-rose-500" /> Management</span>
+                    <span className="text-[10px] text-muted-foreground">Org Settings</span>
+                  </div>
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none bg-secondary/20 shadow-inner">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm">Action Reminder</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    You have <span className="text-foreground font-bold">{stats?.pending_analyses || 0}</span> reports awaiting your clinical sign-off.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

@@ -34,7 +34,7 @@ const adminNavigation = [
   { name: "Org Settings", href: "/admin/settings", icon: Settings },
 ]
 
-export function Sidebar() {
+export function Sidebar({ isMobile = false, className }: { isMobile?: boolean, className?: string }) {
   const pathname = usePathname()
   const { user, isLoading, logout, hasRole } = useAuth()
 
@@ -43,16 +43,23 @@ export function Sidebar() {
   }
 
   return (
-    <div className="flex h-screen w-64 flex-col border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className={cn(
+      "flex h-screen flex-col border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+      !isMobile && "w-64 hidden lg:flex",
+      isMobile && "w-full",
+      className
+    )}>
       {/* Logo */}
-      <div className="flex h-16 items-center border-b border-border/40 px-6">
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
-            <Activity className="h-4 w-4 text-primary-foreground" />
+      {!isMobile && (
+        <div className="flex h-16 items-center border-b border-border/40 px-6">
+          <div className="flex items-center space-x-2">
+            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
+              <Activity className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-semibold">hemora.ch</span>
           </div>
-          <span className="text-lg font-semibold">hemora.ch</span>
         </div>
-      </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">

@@ -23,9 +23,78 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { Plus, Search, Users, Loader2, Eye } from "lucide-react"
-import { usePatients } from "@/lib/hooks"
+import { Plus, Search, Users, Loader2, Eye, MoreVertical, UserMinus, UserCheck } from "lucide-react"
+import { usePatients, useUpdatePatient } from "@/lib/hooks"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import type { PatientResponse } from "@/types"
+
+function PatientRow({ patient, formatDate, calculateAge }: {
+  patient: PatientResponse;
+  formatDate: (d?: string) => string;
+  calculateAge: (d?: string) => string;
+}) {
+  const updatePatient = useUpdatePatient(patient.id)
+
+  const handleToggleStatus = (e: React.MouseEvent) => {
+    e.preventDefault()
+    updatePatient.mutate({ is_active: patient.is_active === false })
+  }
+
+  return (
+    <TableRow key={patient.id} className={patient.is_active === false ? "opacity-50" : ""}>
+      <TableCell className="font-medium">
+        {`${patient.firstName} ${patient.lastName}`}
+      </TableCell>
+      <TableCell>{calculateAge(patient.dateOfBirth)}</TableCell>
+      <TableCell>{patient.gender || '-'}</TableCell>
+      <TableCell className="text-muted-foreground">{patient.email || '-'}</TableCell>
+      <TableCell>{patient.phone || '-'}</TableCell>
+      <TableCell>{formatDate(patient.created_at)}</TableCell>
+      <TableCell>
+        <span className="text-muted-foreground">No analysis</span>
+      </TableCell>
+      <TableCell>
+        <Badge variant={patient.is_active === false ? "secondary" : "default"} className={patient.is_active === false ? "" : "bg-green-500/10 text-green-500 hover:bg-green-500/20 border-none"}>
+          {patient.is_active === false ? 'Inactive' : 'Active'}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <div className="flex space-x-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/patients/${patient.id}`} className="flex items-center">
+                  <Eye className="mr-2 h-4 w-4" /> View Details
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleToggleStatus} disabled={updatePatient.isPending}>
+                {patient.is_active !== false ? (
+                  <>
+                    <UserMinus className="mr-2 h-4 w-4" /> Deactivate
+                  </>
+                ) : (
+                  <>
+                    <UserCheck className="mr-2 h-4 w-4" /> Activate
+                  </>
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </TableCell>
+    </TableRow>
+  )
+}
 
 export default function PatientsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -152,31 +221,12 @@ export default function PatientsPage() {
               </TableHeader>
               <TableBody>
                 {paginatedPatients.map((patient) => (
-                  <TableRow key={patient.id}>
-                    <TableCell className="font-medium">
-                      {`${patient.firstName} ${patient.lastName}`}
-                    </TableCell>
-                    <TableCell>{calculateAge(patient.dateOfBirth)}</TableCell>
-                    <TableCell>{patient.gender || '-'}</TableCell>
-                    <TableCell className="text-muted-foreground">{patient.email || '-'}</TableCell>
-                    <TableCell>{patient.phone || '-'}</TableCell>
-                    <TableCell>{formatDate(patient.created_at)}</TableCell>
-                    <TableCell>
-                      <span className="text-muted-foreground">No analysis</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">Active</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/patients/${patient.id}`}>
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <PatientRow
+                    key={patient.id}
+                    patient={patient}
+                    formatDate={formatDate}
+                    calculateAge={calculateAge}
+                  />
                 ))}
               </TableBody>
             </Table>

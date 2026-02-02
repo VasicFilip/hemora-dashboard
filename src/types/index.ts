@@ -10,6 +10,7 @@ export interface PatientResponse {
   gender?: string
   id: string
   organization_id: string
+  is_active?: boolean
   created_at: string
   updated_at: string
 }
@@ -32,6 +33,7 @@ export interface PatientUpdate {
   phone?: string
   address?: string
   gender?: string
+  is_active?: boolean
 }
 
 export interface LabTestResponse {
@@ -115,7 +117,21 @@ export interface UserResponse {
   id: string
   is_active: boolean
   created_at: string
+}
+
+export interface UserMeResponse extends UserResponse {
   organization_id: string
+  settings?: Record<string, any>
+}
+
+
+export interface PasswordResetRequest {
+  email: string
+}
+
+export interface PasswordResetConfirm {
+  token: string
+  new_password: string
 }
 
 export interface TokenResponse {
@@ -413,23 +429,23 @@ export interface OrganizationResponse {
 }
 
 export interface AnalyticsStats {
-  total_users?: number
-  total_patients: number
-  total_analyses: number
-  total_reports: number
   analyses_this_month: number
+  total_patients: number
+  pending_analyses: number
+  total_organizations?: number
+  total_users?: number
+  total_analyses?: number
+  total_reports?: number
   change_percentages?: {
-    analyses?: number
-    users?: number
-    patients?: number
-    reports?: number
+    analyses: number
+    patients: number
+    reports: number
   }
 }
 
 export interface TimeSeriesPoint {
   date: string
   value: number
-  category?: string
 }
 
 export interface DistributionPoint {

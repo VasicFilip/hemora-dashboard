@@ -343,6 +343,24 @@ export const api = {
       organization_id: string
     }>("/api/auth/me"),
 
+  updateMyProfile: (data: UserUpdate) =>
+    apiRequest<UserResponse>('/api/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  updateMySettings: (data: any) =>
+    apiRequest<UserResponse>('/api/users/me/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  changePassword: (data: { old_password?: string; new_password: string }) =>
+    apiRequest<{ message: string }>('/api/auth/password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
   // Patients
   // Patients
   getPatients: (params?: { page?: number; page_size?: number; search?: string }) => {
@@ -665,6 +683,15 @@ export const api = {
   createOrganization: (data: CreateOrganizationRequest) =>
     apiRequest<OrganizationResponse>('/api/organizations', {
       method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getMyOrganization: () =>
+    apiRequest<OrganizationResponse>('/api/organizations/me'),
+
+  updateMyOrganization: (data: any) =>
+    apiRequest<OrganizationResponse>('/api/organizations/me', {
+      method: 'PATCH',
       body: JSON.stringify(data),
     }),
 

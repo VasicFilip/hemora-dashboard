@@ -50,12 +50,19 @@ export function TrendChart<T>({
     const selectedRange = timeRanges.find(r => r.value === timeRange) || timeRanges[0]
 
     const chartData = React.useMemo(() => {
-        // Cast to any to assume the data strictly satisfies the utils requirements (has created_at)
-        // or that transformData handles it.
-        const filtered = filterByDateRange(data as any[], selectedRange.days)
+        let processedData = data as any[]
 
         if (transformData) {
-            return transformData(filtered as T[], selectedRange.days)
+            processedData = transformData(data as T[], selectedRange.days)
+        }
+
+        // Determine which date key to use for filtering
+        const dateKey = processedData.length > 0 && 'date' in processedData[0] ? 'date' : 'created_at'
+        const filtered = filterByDateRange(processedData, selectedRange.days, dateKey)
+
+        if (transformData) {
+            // Data is already transformed, just need filtering
+            return filtered
         }
 
         // Default transformation: count items per day

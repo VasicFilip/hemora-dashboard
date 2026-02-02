@@ -461,7 +461,7 @@ export default function UploadPage() {
   console.log("groupedMarkers", groupedMarkers)
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-5xl">
+    <div className="container mx-auto py-6 sm:py-8 px-4 max-w-5xl">
       {/* Header */}
       <div className="mb-10 text-center">
         <h1 className="text-4xl font-bold tracking-tight mb-3 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">

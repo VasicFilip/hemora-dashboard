@@ -55,12 +55,16 @@ export function aggregateByPeriod<T extends { created_at: string }>(
 /**
  * Filter data by date range
  */
-export function filterByDateRange<T extends { created_at: string }>(
+export function filterByDateRange<T>(
     data: T[],
-    days: number
+    days: number,
+    dateKey: string = 'created_at'
 ): T[] {
     const cutoffDate = subDays(new Date(), days)
-    return data.filter(item => new Date(item.created_at) >= cutoffDate)
+    return data.filter(item => {
+        const d = (item as any)[dateKey]
+        return d && new Date(d) >= cutoffDate
+    })
 }
 
 /**

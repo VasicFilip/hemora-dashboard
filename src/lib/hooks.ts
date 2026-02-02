@@ -11,13 +11,17 @@ import type {
   LabTestCreate,
   ReportDetailResponse,
   UserResponse,
+  UserUpdate,
   TokenResponse,
   LoginRequest,
   PaginatedResponse,
   AnalyzeResponse,
   AnalysisUploadRequest,
   AnalysisStatusResponse,
-  AnalysisContextCreate
+  AnalysisContextCreate,
+  AnalyticsStats,
+  TimeSeriesPoint,
+  OrganizationResponse,
 } from '@/types'
 
 // Query Keys
@@ -29,6 +33,13 @@ export const queryKeys = {
   reports: ['reports'] as const,
   report: (id: string) => ['reports', id] as const,
   user: ['user'] as const,
+  analytics: {
+    stats: ['analytics', 'stats'] as const,
+    activity: (days: number) => ['analytics', 'activity', days] as const,
+    riskProfile: ['analytics', 'risk-profile'] as const,
+  },
+  organization: ['organization'] as const,
+  members: ['organization', 'members'] as const,
 }
 
 // Auth Hooks
@@ -317,4 +328,95 @@ export function useLoadingStates() {
     isErrorAny: patients.isError || reports.isError || labTests.isError,
     errors: [patients.error, reports.error, labTests.error].filter(Boolean),
   }
+}
+// Analytics Hooks
+export function useAnalyticsStats() {
+  return useQuery({
+    queryKey: queryKeys.analytics.stats,
+    queryFn: () => api.analytics.getStats(),
+  })
+}
+
+export function useAnalyticsActivity(days: number = 30) {
+  return useQuery({
+    queryKey: queryKeys.analytics.activity(days),
+    queryFn: () => api.analytics.getActivity(days),
+  })
+}
+
+export function useAnalyticsRiskProfile() {
+  return useQuery({
+    queryKey: queryKeys.analytics.riskProfile,
+    queryFn: () => api.analytics.getRiskProfile(),
+  })
+}
+
+// Organization Hooks
+export function useOrganization() {
+  return useQuery({
+    queryKey: queryKeys.organization,
+    queryFn: () => api.getMyOrganization(),
+  })
+}
+
+export function useMembers(params?: { page?: number; page_size?: number }) {
+  return useQuery({
+    queryKey: [...queryKeys.members, params],
+    queryFn: () => api.getUsers(params),
+  })
+}
+
+// User Profile Hooks
+export function useUpdateProfile() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: UserUpdate) => api.updateMyProfile(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.user })
+      showToast.success('Profile updated', 'Your profile has been successfully updated')
+    },
+    onError: (error) => {
+      showToast.apiError(error, 'Failed to update profile')
+    },
+  })
+}
+
+export function useUpdateSettings() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: any) => api.updateMySettings(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.user })
+      showToast.success('Settings saved', 'Your preferences have been saved')
+    },
+    onError: (error) => {
+      showToast.apiError(error, 'Failed to save settings')
+    },
+  })
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (data: { old_password?: string; new_password: string }) => api.changePassword(data),
+    onSuccess: () => {
+      showToast.success('Password changed', 'Your password has been updated')
+    },
+    onError: (error) => {
+      showToast.apiError(error, 'Failed to change password')
+    },
+  })
+}
+
+export function useUpdateOrganization() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: any) => api.updateMyOrganization(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.organization })
+      showToast.success('Organization updated', 'Organization details have been saved')
+    },
+    onError: (error) => {
+      showToast.apiError(error, 'Failed to update organization')
+    },
+  })
 }
