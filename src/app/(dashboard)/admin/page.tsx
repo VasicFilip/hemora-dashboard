@@ -1,7 +1,7 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
-import { api } from "@/lib/api"
+import { useAnalyticsStats, useAnalyticsActivity, useAnalyticsRiskProfile } from "@/lib/hooks"
+import { useRequireRole } from "@/lib/rbac"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -24,20 +24,10 @@ import {
 import Link from "next/link"
 
 export default function AdminDashboard() {
-    const { data: stats, isLoading: statsLoading } = useQuery({
-        queryKey: ['admin', 'stats'],
-        queryFn: () => api.analytics.getStats(),
-    })
-
-    const { data: activityData, isLoading: activityLoading } = useQuery({
-        queryKey: ['admin', 'activity'],
-        queryFn: () => api.analytics.getActivity(30),
-    })
-
-    const { data: riskProfile, isLoading: riskLoading } = useQuery({
-        queryKey: ['admin', 'risk-profile'],
-        queryFn: () => api.analytics.getRiskProfile(),
-    })
+    const { isLoading: roleLoading } = useRequireRole('admin')
+    const { data: stats, isLoading: statsLoading } = useAnalyticsStats()
+    const { data: activityData, isLoading: activityLoading } = useAnalyticsActivity(30)
+    const { data: riskProfile, isLoading: riskLoading } = useAnalyticsRiskProfile()
 
     // Mock system health for UI
     const systemHealth = {
@@ -83,6 +73,10 @@ export default function AdminDashboard() {
             description: "Engine reliability rate"
         }
     ]
+
+    if (roleLoading) {
+        return <div className="p-8 text-center text-muted-foreground">Loading...</div>
+    }
 
     return (
         <div className="flex flex-col space-y-6 sm:space-y-8 p-4 sm:p-8 max-w-[1600px] mx-auto animate-in fade-in duration-700">

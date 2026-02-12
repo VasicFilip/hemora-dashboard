@@ -90,7 +90,7 @@ export default function SettingsPage() {
       return
     }
     changePassword.mutate({
-      old_password: passwordData.old_password,
+      current_password: passwordData.old_password,
       new_password: passwordData.new_password
     })
     setPasswordData({ old_password: "", new_password: "", confirm_password: "" })
@@ -251,18 +251,6 @@ export default function SettingsPage() {
               </form>
             </CardContent>
           </Card>
-
-          <Card className="border-none shadow-md ring-1 ring-rose-500/10 bg-rose-500/5">
-            <CardHeader>
-              <CardTitle className="text-rose-600 dark:text-rose-400">Two-Factor Authentication</CardTitle>
-              <CardDescription>Add an extra layer of security to your account.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="border-rose-500/20 text-rose-600 hover:bg-rose-500/10">
-                Setup 2FA
-              </Button>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Preferences Tab */}
@@ -277,11 +265,11 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-base font-bold">Display Language</Label>
-                      <p className="text-xs text-muted-foreground">Select your preferred display language for the dashboard.</p>
+                      <Label className="text-base font-bold">Analysis Engine Language</Label>
+                      <p className="text-xs text-muted-foreground">Default language for new blood analyses. Fixed to German/English.</p>
                     </div>
                     <Select
-                      value={localSettings.language || "en"}
+                      value={localSettings.language || "de"}
                       onValueChange={(v) => handleSettingChange('language', v)}
                     >
                       <SelectTrigger className="w-48 bg-secondary/20 border-none">
@@ -296,17 +284,9 @@ export default function SettingsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Separator className="bg-white/5" />
-                  <div className="flex items-center justify-between opacity-50 cursor-not-allowed">
-                    <div className="space-y-0.5">
-                      <Label className="text-base font-bold">Analysis Engine Language</Label>
-                      <p className="text-xs text-muted-foreground">Default language for new blood analyses. Fixed to German/English.</p>
-                    </div>
-                    <Badge variant="outline" className="bg-white/5 border-none">Auto</Badge>
-                  </div>
                 </div>
 
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base font-bold">Email Notifications</Label>
@@ -334,7 +314,7 @@ export default function SettingsPage() {
                       {localSettings.compactMode ? "Active" : "Disabled"}
                     </Button>
                   </div>
-                </div>
+                </div> */}
               </div>
             </CardContent>
           </Card>

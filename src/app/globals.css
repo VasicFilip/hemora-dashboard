@@ -115,6 +115,22 @@
   --sidebar-ring: oklch(0.552 0.016 285.938);
 }
 
+/* Glassmorphism blur levels */
+:root {
+  --blur-light: 8px;
+  --blur-medium: 16px;
+  --blur-heavy: 24px;
+  --glass-base: 0.65;
+  --glass-elevated: 0.75;
+  --glass-light: 0.45;
+}
+
+.dark {
+  --glass-base: 0.7;
+  --glass-elevated: 0.75;
+  --glass-light: 0.5;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

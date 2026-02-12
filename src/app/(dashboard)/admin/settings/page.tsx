@@ -1,37 +1,24 @@
 'use client'
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { useAdminSettings, useAdminUpdateSettings } from '@/lib/hooks'
+import { useRequireRole } from '@/lib/rbac'
+import { showToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { toast } from 'sonner'
 import { Save } from 'lucide-react'
+import type { SettingsUpdate } from '@/types'
 
 export default function SettingsPage() {
-    const queryClient = useQueryClient()
-
-    const { data: settings, isLoading } = useQuery({
-        queryKey: ['admin', 'settings'],
-        queryFn: () => api.getOrganizationSettings(),
-    })
-
-    const updateMutation = useMutation({
-        mutationFn: api.updateOrganizationSettings,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin', 'settings'] })
-            toast.success('Settings updated successfully')
-        },
-        onError: (error: any) => {
-            toast.error(error.message || 'Failed to update settings')
-        },
-    })
+    const { isLoading: roleLoading } = useRequireRole('admin')
+    const { data: settings, isLoading } = useAdminSettings()
+    const updateMutation = useAdminUpdateSettings()
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         const formData = new FormData(e.currentTarget)
-        const data = {
+        const data: SettingsUpdate = {
             name: formData.get('name') as string,
             settings: {
                 // Add any custom settings here
@@ -40,7 +27,7 @@ export default function SettingsPage() {
         updateMutation.mutate(data)
     }
 
-    if (isLoading) {
+    if (roleLoading || isLoading) {
         return <div className="flex items-center justify-center h-64">Loading...</div>
     }
 

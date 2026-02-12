@@ -8,7 +8,8 @@ import {
   Upload, FileText, CheckCircle, AlertCircle, X, Loader2, ArrowRight, Dna,
   Activity, Pill, Stethoscope, Wine, Cigarette, Dumbbell,
   Search, UserPlus, Scale, Ruler, Globe, Beaker, AlertTriangle, Settings2, Save,
-  History as HistoryIcon, Trash2, ChevronRight, ChevronLeft, Check, Plus
+  History as HistoryIcon, Trash2, ChevronRight, ChevronLeft, Check, Plus,
+  Smile, Meh, Frown, Zap, Thermometer
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -103,6 +104,7 @@ const uploadContextSchema = z.object({
   sport_frequency: z.string().optional(),
   conditions: z.string().max(1000, "Conditions text too long").trim().optional(),
   medications: z.string().max(1000, "Medications text too long").trim().optional(),
+  feeling: z.string().max(1000, "Feeling text too long").trim().optional(),
   notes: z.string().max(2000, "Notes text too long").trim().optional(),
 })
 
@@ -178,6 +180,7 @@ export default function UploadPage() {
     sport_frequency: undefined,
     conditions: "",
     medications: "",
+    feeling: "Normal",
     notes: "",
   })
 
@@ -461,7 +464,7 @@ export default function UploadPage() {
   console.log("groupedMarkers", groupedMarkers)
 
   return (
-    <div className="container mx-auto py-6 sm:py-8 px-4 max-w-5xl">
+    <div className="container mx-auto py-6 sm:py-8 px-4 ">
       {/* Header */}
       <div className="mb-10 text-center">
         <h1 className="text-4xl font-bold tracking-tight mb-3 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -521,7 +524,7 @@ export default function UploadPage() {
                 subMessage="Encrypting and analyzing document structure"
               />
             )}
-            <CardHeader className="bg-primary/[0.02] border-b border-primary/5 pb-8">
+            <CardHeader className="bg-primary/[0.02] border-b border-primary/5 py-8">
               <CardTitle className="text-2xl flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <Upload className="h-6 w-6 text-primary" />
@@ -747,14 +750,14 @@ export default function UploadPage() {
         {/* STEP 2: PROFILE DATA (Matching Screenshot 1) */}
         {currentStep === 2 && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-            <Card className="border-primary/10 shadow-xl overflow-hidden border-2 relative">
+            <Card className="border-primary/10 shadow-xl overflow-hidden border-2 relative p-0">
               {isProcessing && (
                 <LoadingOverlay
                   message="Updating Health Profile..."
                   subMessage="Syncing your biological data context"
                 />
               )}
-              <CardHeader className="bg-primary/[0.02] border-b border-primary/5 flex flex-row items-center justify-between">
+              <CardHeader className="bg-primary/[0.02] py-4 md:py-8 border-b border-primary/5 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-2xl">Add Profile Data</CardTitle>
                   <CardDescription>Refine the patient's medical profile for more accurate analysis.</CardDescription>
@@ -988,8 +991,43 @@ export default function UploadPage() {
                       />
                     </div>
                   </div>
-
                 </div>
+                {/* Patient Feeling Section */}
+                <div className="space-y-4 pt-4">
+                  <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-wider text-xs">
+                    <Smile className="h-4 w-4" />
+                    Current Feeling
+                  </div>
+
+                  <div className="grid grid-cols-5 gap-2">
+                    {[
+                      { label: "Great", icon: Smile, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                      { label: "Normal", icon: Meh, color: "text-blue-500", bg: "bg-blue-500/10" },
+                      { label: "Tired", icon: Zap, color: "text-amber-500", bg: "bg-amber-500/10" },
+                      { label: "Sick", icon: Thermometer, color: "text-orange-500", bg: "bg-orange-500/10" },
+                      { label: "Pain", icon: Frown, color: "text-rose-500", bg: "bg-rose-500/10" },
+                    ].map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => setContextForm({ ...contextForm, feeling: item.label })}
+                        className={`
+                            flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-200
+                            ${contextForm.feeling === item.label
+                            ? `border-primary shadow-md transform scale-105 ${item.bg}`
+                            : "border-muted-foreground/10 hover:border-primary/30 bg-card hover:bg-muted/50"
+                          }
+                          `}
+                      >
+                        <item.icon className={`h-6 w-6 mb-2 ${contextForm.feeling === item.label ? item.color : "text-muted-foreground"}`} />
+                        <span className={`text-[10px] font-bold uppercase tracking-tighter ${contextForm.feeling === item.label ? "text-primary" : "text-muted-foreground"}`}>
+                          {item.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
 
                 <Separator className="my-8" />
 
@@ -1266,6 +1304,6 @@ export default function UploadPage() {
           100% { width: 95%; }
         }
       `}</style>
-    </div>
+    </div >
   )
 }

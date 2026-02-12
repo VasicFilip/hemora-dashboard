@@ -11,6 +11,7 @@ import type {
   LabTestCreate,
   ReportDetailResponse,
   UserResponse,
+  UserCreate,
   UserUpdate,
   TokenResponse,
   LoginRequest,
@@ -22,6 +23,7 @@ import type {
   AnalyticsStats,
   TimeSeriesPoint,
   OrganizationResponse,
+  SettingsUpdate,
 } from '@/types'
 
 // Query Keys
@@ -40,6 +42,11 @@ export const queryKeys = {
   },
   organization: ['organization'] as const,
   members: ['organization', 'members'] as const,
+  admin: {
+    users: (params?: { search?: string; page?: number; page_size?: number }) => ['admin', 'users', params] as const,
+    settings: ['admin', 'settings'] as const,
+    auditLogs: (params?: { page?: number; page_size?: number; user_id?: string; action?: string }) => ['admin', 'audit-logs', params] as const,
+  },
 }
 
 // Auth Hooks
@@ -351,6 +358,86 @@ export function useAnalyticsRiskProfile() {
   })
 }
 
+// Admin Hooks - Users
+export function useAdminUsers(params?: { search?: string; page?: number; page_size?: number }) {
+  return useQuery({
+    queryKey: queryKeys.admin.users(params),
+    queryFn: () => api.getUsers(params),
+  })
+}
+
+export function useAdminCreateUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: UserCreate) => api.createUser(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() })
+      showToast.success('User created', 'New user has been added to the system')
+    },
+    onError: (error: unknown) => {
+      showToast.apiError(error, 'Failed to create user')
+    },
+  })
+}
+
+export function useAdminUpdateUser(userId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: UserUpdate) => api.updateUser(userId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() })
+      showToast.success('User updated', 'User information has been saved')
+    },
+    onError: (error: unknown) => {
+      showToast.apiError(error, 'Failed to update user')
+    },
+  })
+}
+
+export function useAdminDeleteUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (userId: string) => api.deleteUser(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() })
+      showToast.success('User deleted', 'User has been removed from the system')
+    },
+    onError: (error: unknown) => {
+      showToast.apiError(error, 'Failed to delete user')
+    },
+  })
+}
+
+// Admin Hooks - Settings
+export function useAdminSettings() {
+  return useQuery({
+    queryKey: queryKeys.admin.settings,
+    queryFn: () => api.getOrganizationSettings(),
+  })
+}
+
+export function useAdminUpdateSettings() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: SettingsUpdate) => api.updateOrganizationSettings(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.settings })
+      showToast.success('Settings saved', 'Organization settings have been updated')
+    },
+    onError: (error: unknown) => {
+      showToast.apiError(error, 'Failed to save settings')
+    },
+  })
+}
+
+// Admin Hooks - Audit Logs
+export function useAdminAuditLogs(params?: { page?: number; page_size?: number; user_id?: string; action?: string }) {
+  return useQuery({
+    queryKey: queryKeys.admin.auditLogs(params),
+    queryFn: () => api.getAuditLogs(params),
+  })
+}
+
 // Organization Hooks
 export function useOrganization() {
   return useQuery({
@@ -397,12 +484,25 @@ export function useUpdateSettings() {
 
 export function useChangePassword() {
   return useMutation({
-    mutationFn: (data: { old_password?: string; new_password: string }) => api.changePassword(data),
+    mutationFn: (data: { current_password: string; new_password: string }) => api.changePassword(data),
     onSuccess: () => {
       showToast.success('Password changed', 'Your password has been updated')
     },
     onError: (error) => {
       showToast.apiError(error, 'Failed to change password')
+    },
+  })
+}
+
+export function useResetUserPassword() {
+  return useMutation({
+    mutationFn: ({ userId, new_password }: { userId: string; new_password: string }) =>
+      api.resetUserPassword(userId, { new_password }),
+    onSuccess: () => {
+      showToast.success('Password reset', 'User password has been updated')
+    },
+    onError: (error) => {
+      showToast.apiError(error, 'Failed to reset password')
     },
   })
 }

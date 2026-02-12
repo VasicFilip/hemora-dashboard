@@ -100,6 +100,7 @@ export interface AnalysisContextCreate {
   body_type?: string
   conditions?: string
   medications?: string
+  feeling?: string
   notes?: string
 }
 
@@ -460,4 +461,18 @@ export interface SystemUsageStats {
   api_status: 'Operational' | 'Degraded' | 'Down'
   database_status: 'Connected' | 'Disconnected'
   storage_status: 'Available' | 'Full' | 'Error'
+}
+
+// ============================================================================
+// AUDIT LOGS
+// ============================================================================
+
+export interface AuditLog {
+  id: string
+  user_id: string
+  action: string
+  resource_type: string
+  resource_id: string
+  details?: Record<string, any>
+  created_at: string
 }

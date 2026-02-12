@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { PatientResponse } from "@/types"
+import { CreatePatientDialog } from "@/components/create-patient-dialog"
 
 function PatientRow({ patient, formatDate, calculateAge }: {
   patient: PatientResponse;
@@ -162,7 +163,7 @@ export default function PatientsPage() {
   }
 
   return (
-    <div className="flex flex-col space-y-6 p-6">
+    <div className="flex flex-col space-y-6 p-6 container mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -171,12 +172,7 @@ export default function PatientsPage() {
             Manage patient records and blood analysis history
           </p>
         </div>
-        <Button asChild>
-          <Link href="/patients/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Patient
-          </Link>
-        </Button>
+        <CreatePatientDialog />
       </div>
 
       {/* Search and Stats */}
@@ -285,12 +281,7 @@ export default function PatientsPage() {
               }
             </p>
             {!searchTerm && (
-              <Button asChild>
-                <Link href="/patients/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Your First Patient
-                </Link>
-              </Button>
+              <CreatePatientDialog />
             )}
           </CardContent>
         </Card>

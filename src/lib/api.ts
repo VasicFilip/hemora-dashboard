@@ -37,6 +37,7 @@ import type {
   SystemUsageStats,
   CreateOrganizationRequest,
   OrganizationResponse,
+  AuditLog,
 } from '@/types'
 
 // API Configuration
@@ -355,9 +356,15 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  changePassword: (data: { old_password?: string; new_password: string }) =>
-    apiRequest<{ message: string }>('/api/auth/password', {
-      method: 'POST',
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    apiRequest<{ message: string }>('/api/users/me/password', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  resetUserPassword: (userId: string, data: { new_password: string }) =>
+    apiRequest<{ message: string }>(`/api/admin/users/${userId}/password`, {
+      method: 'PATCH',
       body: JSON.stringify(data),
     }),
 
@@ -650,6 +657,17 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+
+  getAuditLogs: (params?: { page?: number; page_size?: number; user_id?: string; action?: string }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.page) searchParams.append('page', params.page.toString())
+    if (params?.page_size) searchParams.append('page_size', params.page_size.toString())
+    if (params?.user_id) searchParams.append('user_id', params.user_id)
+    if (params?.action) searchParams.append('action', params.action)
+
+    const queryString = searchParams.toString()
+    return apiRequest<PaginatedResponse<AuditLog>>(`/api/admin/audit-logs${queryString ? `?${queryString}` : ''}`)
+  },
 
   // ============================================================================
   // REPORTS - PDF Generation

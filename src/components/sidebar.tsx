@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useAuth } from "@/lib/auth-context"
+import { HemoraLogo } from "@/components/HemoraLogo"
 import {
   Users,
   Upload,
@@ -31,6 +32,7 @@ const adminNavigation = [
   { name: "Admin Dashboard", href: "/admin", icon: Shield },
   { name: "System Analytics", href: "/admin/analytics", icon: Activity },
   { name: "User Management", href: "/admin/users", icon: UserCog },
+  { name: "Audit Logs", href: "/admin/audit-logs", icon: FileText },
   { name: "Org Settings", href: "/admin/settings", icon: Settings },
 ]
 
@@ -44,7 +46,7 @@ export function Sidebar({ isMobile = false, className }: { isMobile?: boolean, c
 
   return (
     <div className={cn(
-      "flex h-screen flex-col border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+      "flex h-screen flex-col bg-white/85 dark:bg-black/30 backdrop-blur-[16px] border-r border-black/10 dark:border-white/20 dark:[box-shadow:inset_-1px_0_0_rgba(255,255,255,0.1)]",
       !isMobile && "w-64 hidden lg:flex",
       isMobile && "w-full",
       className
@@ -52,12 +54,7 @@ export function Sidebar({ isMobile = false, className }: { isMobile?: boolean, c
       {/* Logo */}
       {!isMobile && (
         <div className="flex h-16 items-center border-b border-border/40 px-6">
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
-              <Activity className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-semibold">hemora.ch</span>
-          </div>
+          <HemoraLogo size="lg" showText={true} />
         </div>
       )}
 

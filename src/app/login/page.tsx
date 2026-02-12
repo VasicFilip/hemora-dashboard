@@ -6,12 +6,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useAuth } from '@/lib/auth-context'
+import { HemoraLogo } from '@/components/HemoraLogo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Activity, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
+import { showToast } from '@/lib/toast'
 
 const loginSchema = z.object({
     email: z.string().email('Invalid email address').trim(),
@@ -43,9 +44,7 @@ function LoginForm() {
             // Redirect to the page they were trying to access, or home
             router.push(from)
         } catch (error: any) {
-            toast.error('Login failed', {
-                description: error.message || 'Invalid email or password',
-            })
+            showToast.error('Login failed', error.message || 'Invalid email or password')
         } finally {
             setIsLoading(false)
         }
@@ -55,10 +54,9 @@ function LoginForm() {
         <div className="flex min-h-screen items-center justify-center bg-background p-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1 text-center">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-                        <Activity className="h-6 w-6 text-primary-foreground" />
+                    <div className="h-22 overflow-hidden">
+                        <HemoraLogo size="xl" showText={false} />
                     </div>
-                    <CardTitle className="text-2xl font-bold">hemora.ch</CardTitle>
                     <CardDescription>
                         Clinical Blood Analysis Assistant
                     </CardDescription>

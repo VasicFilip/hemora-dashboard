@@ -197,7 +197,7 @@ export default function ResultsPage() {
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-background pb-20 font-sans">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-30 w-full bg-white/75 dark:bg-black/80 backdrop-blur-[16px] border-b border-black/8 dark:border-white/8 shadow-sm">
         <div className="container flex h-16 items-center justify-between px-4 max-w-5xl mx-auto">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard')}>
@@ -216,11 +216,11 @@ export default function ResultsPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="bg-muted/50 p-1 rounded-lg flex items-center mr-2 border">
+            <div className="bg-white/40 dark:bg-white/5 backdrop-blur-[8px] p-1 rounded-lg flex items-center mr-2 border border-black/10 dark:border-white/10">
               <button
                 onClick={() => setViewMode('patient')}
                 className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${viewMode === 'patient'
-                  ? 'bg-white shadow-sm text-primary dark:bg-gray-800'
+                  ? 'bg-white/60 shadow-sm text-primary dark:bg-white/10'
                   : 'text-muted-foreground hover:text-foreground'
                   }`}
               >
@@ -229,7 +229,7 @@ export default function ResultsPage() {
               <button
                 onClick={() => setViewMode('clinician')}
                 className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${viewMode === 'clinician'
-                  ? 'bg-white shadow-sm text-primary dark:bg-gray-800'
+                  ? 'bg-white/60 shadow-sm text-primary dark:bg-white/10'
                   : 'text-muted-foreground hover:text-foreground'
                   }`}
               >
@@ -250,7 +250,7 @@ export default function ResultsPage() {
       <main className="container max-w-4xl mx-auto px-4 py-8 space-y-10">
 
         {/* Hero Summary Section */}
-        <section className="bg-white dark:bg-card rounded-xl border shadow-sm p-6 md:p-8 space-y-6">
+        <section className="bg-white/65 dark:bg-black/70 backdrop-blur-[16px] border border-black/8 dark:border-white/8 rounded-xl shadow-lg p-6 md:p-8 space-y-6">
           <div className="flex flex-col md:flex-row gap-8 items-start">
             <div className="flex-1 space-y-4">
               <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Overview</h2>
@@ -267,7 +267,7 @@ export default function ResultsPage() {
             </div>
 
             {/* Metrics Circle */}
-            <div className="shrink-0 flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-800 w-full md:w-auto min-w-[200px]">
+            <div className="shrink-0 flex flex-col items-center justify-center p-6 bg-stone-50/40 dark:bg-white/5 backdrop-blur-[8px] rounded-xl border border-black/5 dark:border-white/5 w-full md:w-auto min-w-[200px]">
               <div className="relative h-32 w-32 flex items-center justify-center">
                 <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" className="text-gray-200 dark:text-gray-800" strokeWidth="8" />

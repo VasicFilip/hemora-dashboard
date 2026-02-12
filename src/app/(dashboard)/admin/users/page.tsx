@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { useAdminUsers, useAdminCreateUser, useAdminUpdateUser, useAdminDeleteUser, useResetUserPassword } from '@/lib/hooks'
+import { useRequireRole } from '@/lib/rbac'
+import { showToast } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Key } from 'lucide-react'
 import {
     Table,
     TableBody,
@@ -30,46 +31,22 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
 import type { UserCreate, UserResponse } from '@/types'
 
 export default function UsersPage() {
+    const { isLoading: roleLoading } = useRequireRole('admin')
     const [search, setSearch] = useState('')
     const [page, setPage] = useState(1)
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null)
-    const queryClient = useQueryClient()
+    const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
 
-    const { data, isLoading } = useQuery({
-        queryKey: ['admin', 'users', { search, page }],
-        queryFn: () => api.getUsers({ search, page, page_size: 20 }),
-    })
-
-    const createMutation = useMutation({
-        mutationFn: api.createUser,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
-            setIsCreateOpen(false)
-            toast.success('User created successfully')
-        },
-        onError: (error: any) => {
-            toast.error(error.message || 'Failed to create user')
-        },
-    })
-
-    const updateMutation = useMutation({
-        mutationFn: ({ id, data }: { id: string; data: any }) => api.updateUser(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
-            setIsEditOpen(false)
-            setSelectedUser(null)
-            toast.success('User updated successfully')
-        },
-        onError: (error: any) => {
-            toast.error(error.message || 'Failed to update user')
-        },
-    })
+    const resetPasswordMutation = useResetUserPassword()
+    const { data, isLoading } = useAdminUsers({ search, page, page_size: 20 })
+    const createMutation = useAdminCreateUser()
+    const updateMutation = useAdminUpdateUser(selectedUser?.id || '')
+    const deleteMutation = useAdminDeleteUser()
 
     const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -80,7 +57,9 @@ export default function UsersPage() {
             name: formData.get('name') as string,
             role: formData.get('role') as 'admin' | 'clinician' | 'staff',
         }
-        createMutation.mutate(data)
+        createMutation.mutate(data, {
+            onSuccess: () => setIsCreateOpen(false),
+        })
     }
 
     const handleEdit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -93,10 +72,35 @@ export default function UsersPage() {
             role: formData.get('role') as 'admin' | 'clinician' | 'staff',
             is_active: formData.get('is_active') === 'true',
         }
-        updateMutation.mutate({ id: selectedUser.id, data })
+        updateMutation.mutate(data, {
+            onSuccess: () => {
+                setIsEditOpen(false)
+                setSelectedUser(null)
+            },
+        })
+    }
+
+    const handleResetPassword = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        if (!selectedUser) return
+        const formData = new FormData(e.currentTarget)
+        const new_password = formData.get('new_password') as string
+        resetPasswordMutation.mutate(
+            { userId: selectedUser.id, new_password },
+            {
+                onSuccess: () => {
+                    setIsResetPasswordOpen(false)
+                    setSelectedUser(null)
+                }
+            }
+        )
     }
 
     const totalPages = Math.ceil((data?.total || 0) / 20)
+
+    if (roleLoading) {
+        return <div className="p-8"><div className="text-center text-muted-foreground">Loading...</div></div>
+    }
 
     return (
         <div className="space-y-6">
@@ -167,6 +171,16 @@ export default function UsersPage() {
                                             }}
                                         >
                                             <Pencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                setSelectedUser(user)
+                                                setIsResetPasswordOpen(true)
+                                            }}
+                                        >
+                                            <Key className="h-4 w-4" />
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -302,6 +316,43 @@ export default function UsersPage() {
                                 </Button>
                                 <Button type="submit" disabled={updateMutation.isPending}>
                                     {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Reset Password Dialog */}
+            <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reset Password</DialogTitle>
+                        <DialogDescription>
+                            Set a new temporary password for {selectedUser?.name}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedUser && (
+                        <form onSubmit={handleResetPassword}>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="new_password">New Password</Label>
+                                    <Input
+                                        id="new_password"
+                                        name="new_password"
+                                        type="password"
+                                        required
+                                        minLength={8}
+                                        placeholder="Min. 8 characters"
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setIsResetPasswordOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button type="submit" disabled={resetPasswordMutation.isPending}>
+                                    {resetPasswordMutation.isPending ? 'Resetting...' : 'Reset Password'}
                                 </Button>
                             </DialogFooter>
                         </form>

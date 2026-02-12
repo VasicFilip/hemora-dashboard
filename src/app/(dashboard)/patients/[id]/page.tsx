@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
+import { usePatient } from "@/lib/hooks"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -46,10 +47,7 @@ function PatientDetailPageClient({ patientId }: { patientId: string }) {
   const [currentPage, setCurrentPage] = React.useState(1)
   const itemsPerPage = 10
 
-  const { data: patient, isLoading, error } = useQuery({
-    queryKey: ['patient', patientId],
-    queryFn: () => api.getPatient(patientId),
-  })
+  const { data: patient, isLoading, error } = usePatient(patientId)
 
   const { data: analysesData } = useQuery({
     queryKey: ['analyses', { patient_id: patientId }],

@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useQuery } from "@tanstack/react-query"
-import { api } from "@/lib/api"
+import { useAnalyticsStats, useAnalyticsActivity } from "@/lib/hooks"
+import { useRequireRole } from "@/lib/rbac"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendChart } from "@/components/charts/TrendChart"
 import { DistributionChart } from "@/components/charts/DistributionChart"
@@ -10,25 +10,25 @@ import { ComparisonChart } from "@/components/charts/ComparisonChart"
 import { Users, Activity, FileText, Shield } from "lucide-react"
 
 export default function AdminAnalyticsPage() {
-    const { data: stats } = useQuery({
-        queryKey: ['analytics', 'stats'],
-        queryFn: () => api.analytics.getStats(),
-    })
-
-    const { data: activity } = useQuery({
-        queryKey: ['analytics', 'activity'],
-        queryFn: () => api.analytics.getActivity(30),
-    })
-
-    const { data: roleDistribution } = useQuery({
-        queryKey: ['analytics', 'distribution', 'role'],
-        queryFn: () => api.analytics.getDistribution('role'),
-    })
+    const { isLoading: roleLoading } = useRequireRole('admin')
+    const { data: stats } = useAnalyticsStats()
+    const { data: activity } = useAnalyticsActivity(30)
 
     // Calculate analyses per user safely
     const analysesPerUser = (stats?.total_users && stats.total_analyses)
         ? (stats.total_analyses / stats.total_users).toFixed(1)
         : '0.0'
+
+    // Mock role distribution data (TODO: replace with actual API data when available)
+    const roleDistribution = [
+        { id: 'admin', label: 'Admin', value: 2 },
+        { id: 'clinician', label: 'Clinician', value: 15 },
+        { id: 'staff', label: 'Staff', value: 8 },
+    ]
+
+    if (roleLoading) {
+        return <div className="p-8 text-center text-muted-foreground">Loading...</div>
+    }
 
     return (
         <div className="flex flex-col space-y-6 p-6">

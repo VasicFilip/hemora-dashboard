@@ -29,7 +29,7 @@ export default function Dashboard() {
   const isLoading = statsLoading || activityLoading || reportsLoading || riskLoading
 
   return (
-    <div className="flex flex-col space-y-8 p-8 max-w-[1600px] mx-auto animate-in fade-in duration-700">
+    <div className="flex flex-col space-y-8 p-4 sm:p-6 lg:p-8 container mx-auto animate-in fade-in duration-700">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-1">
@@ -58,7 +58,7 @@ export default function Dashboard() {
         {isLoading ? (
           <>
             {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="overflow-hidden border-none bg-secondary/30 backdrop-blur-sm">
+              <Card key={i} variant="glass" className="overflow-hidden">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-4 w-4" />
@@ -72,10 +72,10 @@ export default function Dashboard() {
           </>
         ) : (
           <>
-            <Card className="group border-none bg-gradient-to-br from-blue-500/10 to-blue-600/5 transition-all hover:shadow-xl hover:shadow-blue-500/10">
+            <Card variant="glass" className="group border-l-4 border-l-blue-500 transition-all hover:shadow-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-blue-600/80 dark:text-blue-400/80">Total Patients</CardTitle>
-                <div className="rounded-full bg-blue-500/10 p-2 text-blue-600">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider">Total Patients</CardTitle>
+                <div className="rounded-full bg-blue-500/10 p-2 text-blue-600 dark:text-blue-400">
                   <Users className="h-4 w-4" />
                 </div>
               </CardHeader>
@@ -87,10 +87,10 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="group border-none bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 transition-all hover:shadow-xl hover:shadow-emerald-500/10">
+            <Card variant="glass" className="group border-l-4 border-l-emerald-500 transition-all hover:shadow-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-emerald-600/80 dark:text-emerald-400/80">New Analyses</CardTitle>
-                <div className="rounded-full bg-emerald-500/10 p-2 text-emerald-600">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider">New Analyses</CardTitle>
+                <div className="rounded-full bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
                   <FileText className="h-4 w-4" />
                 </div>
               </CardHeader>
@@ -102,10 +102,10 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="group border-none bg-gradient-to-br from-amber-500/10 to-amber-600/5 transition-all hover:shadow-xl hover:shadow-amber-500/10">
+            <Card variant="glass" className="group border-l-4 border-l-amber-500 transition-all hover:shadow-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-amber-600/80 dark:text-amber-400/80">Pending Review</CardTitle>
-                <div className="rounded-full bg-amber-500/10 p-2 text-amber-600">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider">Pending Review</CardTitle>
+                <div className="rounded-full bg-amber-500/10 p-2 text-amber-600 dark:text-amber-400">
                   <Clock className="h-4 w-4" />
                 </div>
               </CardHeader>
@@ -117,10 +117,10 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="group border-none bg-gradient-to-br from-rose-500/10 to-rose-600/5 transition-all hover:shadow-xl hover:shadow-rose-500/10">
+            <Card variant="glass" className="group border-l-4 border-l-rose-500 transition-all hover:shadow-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-rose-600/80 dark:text-rose-400/80">System Health</CardTitle>
-                <div className="rounded-full bg-rose-500/10 p-2 text-rose-600">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider">System Health</CardTitle>
+                <div className="rounded-full bg-rose-500/10 p-2 text-rose-600 dark:text-rose-400">
                   <TrendingUp className="h-4 w-4" />
                 </div>
               </CardHeader>
@@ -137,20 +137,20 @@ export default function Dashboard() {
 
       {/* Analytics Section */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-none bg-card/40 backdrop-blur-xl shadow-lg ring-1 ring-white/10 overflow-hidden">
+        <Card variant="glass" className="lg:col-span-4 p-0 overflow-hidden">
           <TrendChart
             data={activityData || []}
             title="Extraction Activity"
             description="Daily analysis throughput across the system"
             dataKeys={[
-              { key: "value", label: "Tests Processed", color: "hsl(var(--primary))" }
+              { key: "value", label: "Total Analysis", color: "hsl(var(--primary))" }
             ]}
             height={350}
             transformData={(data: any) => data.map((d: any) => ({ date: d.date, value: d.value }))}
           />
         </Card>
 
-        <Card className="lg:col-span-3 border-none bg-card/40 backdrop-blur-xl shadow-lg ring-1 ring-white/10">
+        <Card variant="glass" className="lg:col-span-3 p-0">
           <DistributionChart
             data={riskProfile || []}
             title="Health Distribution"
@@ -164,7 +164,7 @@ export default function Dashboard() {
 
       {/* Bottom Section */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-lg ring-1 ring-white/10">
+        <Card variant="glass">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Recent Reports</CardTitle>
@@ -240,7 +240,7 @@ export default function Dashboard() {
 
         {/* Quick Actions Column */}
         <div className="space-y-6">
-          <Card className="border-none bg-gradient-to-tr from-primary/10 to-primary/5 shadow-lg border-l-4 border-l-primary">
+          <Card variant="glass" className="border-l-4 border-l-primary">
             <CardHeader>
               <CardTitle className="text-lg">Quick Workflows</CardTitle>
             </CardHeader>
