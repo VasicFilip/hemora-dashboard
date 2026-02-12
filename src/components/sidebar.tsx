@@ -54,7 +54,7 @@ export function Sidebar({ isMobile = false, className }: { isMobile?: boolean, c
       {/* Logo */}
       {!isMobile && (
         <div className="flex h-16 items-center border-b border-border/40 px-6">
-          <HemoraLogo size="lg" showText={true} />
+          <HemoraLogo size="xl" showText={true} />
         </div>
       )}
 

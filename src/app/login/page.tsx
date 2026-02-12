@@ -54,8 +54,8 @@ function LoginForm() {
         <div className="flex min-h-screen items-center justify-center bg-background p-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1 text-center">
-                    <div className="h-22 overflow-hidden">
-                        <HemoraLogo size="xl" showText={false} />
+                    <div className="flex h-16 items-center justify-center px-6">
+                        <HemoraLogo size="xl" showText={true} />
                     </div>
                     <CardDescription>
                         Clinical Blood Analysis Assistant

@@ -18,7 +18,7 @@ export function MobileNav() {
 
     return (
         <div className="lg:hidden flex items-center justify-between h-16 px-6 border-b bg-white/80 dark:bg-black/35 backdrop-blur-[16px] border-black/10 dark:border-white/20 sticky top-0 z-50 shadow-sm dark:shadow-black/40 dark:[box-shadow:0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)]">
-            <HemoraLogo size="md" showText={true} />
+            <HemoraLogo size="lg" showText={true} />
 
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild>
