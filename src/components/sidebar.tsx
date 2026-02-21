@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { LanguageToggle } from "@/components/language-toggle"
 import { useAuth } from "@/lib/auth-context"
+import { useTranslation } from "@/lib/i18n-context"
 import { HemoraLogo } from "@/components/HemoraLogo"
 import {
   Users,
@@ -19,26 +21,27 @@ import {
   UserCog,
 } from "lucide-react"
 
-const navigation = [
-  { name: "Dashboard", href: "/", icon: Home },
-  { name: "Patients", href: "/patients", icon: Users },
-  { name: "Upload Analysis", href: "/upload", icon: Upload },
-  { name: "Reports", href: "/reports", icon: FileText },
-  { name: "Analytics", href: "/analytics", icon: Activity },
-  { name: "Settings", href: "/settings", icon: Settings },
-]
-
-const adminNavigation = [
-  { name: "Admin Dashboard", href: "/admin", icon: Shield },
-  { name: "System Analytics", href: "/admin/analytics", icon: Activity },
-  { name: "User Management", href: "/admin/users", icon: UserCog },
-  { name: "Audit Logs", href: "/admin/audit-logs", icon: FileText },
-  { name: "Org Settings", href: "/admin/settings", icon: Settings },
-]
-
 export function Sidebar({ isMobile = false, className }: { isMobile?: boolean, className?: string }) {
   const pathname = usePathname()
   const { user, isLoading, logout, hasRole } = useAuth()
+  const { t } = useTranslation()
+
+  const navigation = [
+    { name: t('nav.dashboard'), href: "/", icon: Home },
+    { name: t('nav.patients'), href: "/patients", icon: Users },
+    { name: t('nav.upload'), href: "/upload", icon: Upload },
+    { name: t('nav.reports'), href: "/reports", icon: FileText },
+    { name: t('nav.analytics'), href: "/analytics", icon: Activity },
+    { name: t('nav.settings'), href: "/settings", icon: Settings },
+  ]
+
+  const adminNavigation = [
+    { name: t('nav.admin_dashboard'), href: "/admin", icon: Shield },
+    { name: t('nav.system_analytics'), href: "/admin/analytics", icon: Activity },
+    { name: t('nav.user_management'), href: "/admin/users", icon: UserCog },
+    { name: t('nav.audit_logs'), href: "/admin/audit-logs", icon: FileText },
+    { name: t('nav.org_settings'), href: "/admin/settings", icon: Settings },
+  ]
 
   const getUserInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase()
@@ -65,7 +68,7 @@ export function Sidebar({ isMobile = false, className }: { isMobile?: boolean, c
           const isActive = pathname === item.href
 
           return (
-            <Link key={item.name} href={item.href}>
+            <Link key={item.href} href={item.href}>
               <Button
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn(
@@ -85,7 +88,7 @@ export function Sidebar({ isMobile = false, className }: { isMobile?: boolean, c
           <>
             <div className="pt-4 pb-2 px-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Administration
+                {t('nav.administration')}
               </p>
             </div>
             {adminNavigation.map((item) => {
@@ -93,7 +96,7 @@ export function Sidebar({ isMobile = false, className }: { isMobile?: boolean, c
               const isActive = pathname === item.href
 
               return (
-                <Link key={item.name} href={item.href}>
+                <Link key={item.href} href={item.href}>
                   <Button
                     variant={isActive ? "secondary" : "ghost"}
                     className={cn(
@@ -122,7 +125,7 @@ export function Sidebar({ isMobile = false, className }: { isMobile?: boolean, c
             </div>
             <div className="text-sm flex-1 min-w-0">
               <p className="font-medium truncate">
-                {isLoading ? 'Loading...' : user?.name || 'User'}
+                {isLoading ? t('nav.loading') : user?.name || t('nav.user')}
               </p>
               <p className="text-xs text-muted-foreground truncate">
                 {isLoading ? '...' : user?.email || ''}
@@ -134,7 +137,10 @@ export function Sidebar({ isMobile = false, className }: { isMobile?: boolean, c
               )}
             </div>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <LanguageToggle />
+            <ThemeToggle />
+          </div>
         </div>
         <Button
           variant="outline"
@@ -143,7 +149,7 @@ export function Sidebar({ isMobile = false, className }: { isMobile?: boolean, c
           onClick={() => logout()}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          Logout
+          {t('nav.logout')}
         </Button>
       </div>
     </div>

@@ -5,13 +5,14 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Sidebar } from "@/components/sidebar";
 import { QueryProvider } from "@/lib/query-provider";
 import { AuthProvider } from "@/lib/auth-context";
+import { LanguageProvider } from "@/lib/i18n-context";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "hemora.ch - Clinical Blood Analysis Assistant",
-  description: "AI-powered blood analysis assistant for clinicians",
+  title: "hemora.ch - Klinischer Blutanalyse-Assistent",
+  description: "KI-gestützter Blutanalyse-Assistent für Kliniker",
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
@@ -41,19 +42,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="de" suppressHydrationWarning>
       <body className={inter.className}>
         <QueryProvider>
           <AuthProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="light"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-              <Toaster position="top-right" />
-            </ThemeProvider>
+            <LanguageProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="light"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+                <Toaster position="top-right" />
+              </ThemeProvider>
+            </LanguageProvider>
           </AuthProvider>
         </QueryProvider>
       </body>

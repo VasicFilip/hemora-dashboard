@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Shield, Loader2, AlertCircle } from "lucide-react"
+import { useTranslation } from "@/lib/i18n-context"
 
 const signupSchema = z.object({
     full_name: z.string().min(2, "Full name must be at least 2 characters").trim(),
@@ -28,6 +29,7 @@ export default function TemporaryAdminSignup() {
     const [isLoading, setIsLoading] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
     const [success, setSuccess] = React.useState(false)
+    const { t } = useTranslation()
 
     const form = useForm<SignupFormValues>({
         resolver: zodResolver(signupSchema),
@@ -72,17 +74,17 @@ export default function TemporaryAdminSignup() {
                             <Shield className="h-6 w-6 text-primary" />
                         </div>
                     </div>
-                    <CardTitle className="text-2xl text-center font-bold">Admin Setup</CardTitle>
+                    <CardTitle className="text-2xl text-center font-bold">{t('signup.title')}</CardTitle>
                     <CardDescription className="text-center">
-                        Create a new administrative account. (Temporary Page)
+                        {t('signup.description')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {success ? (
                         <Alert className="bg-green-50 border-green-200">
-                            <AlertTitle className="text-green-800">Account Created!</AlertTitle>
+                            <AlertTitle className="text-green-800">{t('signup.success_title')}</AlertTitle>
                             <AlertDescription className="text-green-700">
-                                Admin account has been successfully created. Redirecting to login in 3 seconds...
+                                {t('signup.success_description')}
                             </AlertDescription>
                         </Alert>
                     ) : (
@@ -90,12 +92,12 @@ export default function TemporaryAdminSignup() {
                             {error && (
                                 <Alert variant="destructive">
                                     <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>Error</AlertTitle>
+                                    <AlertTitle>{t('signup.error_title')}</AlertTitle>
                                     <AlertDescription>{error}</AlertDescription>
                                 </Alert>
                             )}
                             <div className="space-y-2">
-                                <Label htmlFor="full_name">Full Name</Label>
+                                <Label htmlFor="full_name">{t('signup.full_name')}</Label>
                                 <Input
                                     id="full_name"
                                     placeholder="John Doe"
@@ -108,7 +110,7 @@ export default function TemporaryAdminSignup() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="organization_name">Organization Name</Label>
+                                <Label htmlFor="organization_name">{t('signup.org_name')}</Label>
                                 <Input
                                     id="organization_name"
                                     placeholder="Hemora Clinic"
@@ -121,7 +123,7 @@ export default function TemporaryAdminSignup() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email">{t('signup.email')}</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -135,7 +137,7 @@ export default function TemporaryAdminSignup() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password">{t('signup.password')}</Label>
                                 <Input
                                     id="password"
                                     type="password"
@@ -148,11 +150,11 @@ export default function TemporaryAdminSignup() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="admin_secret">Administrative Secret Code</Label>
+                                <Label htmlFor="admin_secret">{t('signup.admin_secret')}</Label>
                                 <Input
                                     id="admin_secret"
                                     type="password"
-                                    placeholder="Enter the secret setup code"
+                                    placeholder={t('signup.admin_secret_placeholder')}
                                     {...form.register("admin_secret")}
                                     disabled={isLoading}
                                     autoComplete="off"
@@ -161,17 +163,17 @@ export default function TemporaryAdminSignup() {
                                     <p className="text-sm text-red-500">{form.formState.errors.admin_secret.message}</p>
                                 )}
                                 <p className="text-[10px] text-muted-foreground">
-                                    * This code is required to authorize the creation of an admin account.
+                                    {t('signup.admin_secret_hint')}
                                 </p>
                             </div>
                             <Button type="submit" className="w-full" disabled={isLoading}>
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Creating Account...
+                                        {t('signup.creating')}
                                     </>
                                 ) : (
-                                    "Create Admin Account"
+                                    t('signup.create')
                                 )}
                             </Button>
                         </form>
@@ -179,9 +181,9 @@ export default function TemporaryAdminSignup() {
                 </CardContent>
                 <CardFooter className="flex justify-center">
                     <p className="text-sm text-muted-foreground">
-                        Already have an account?{" "}
+                        {t('signup.already_account')}{" "}
                         <Button variant="link" className="p-0 h-auto" onClick={() => router.push("/login")}>
-                            Log in
+                            {t('signup.log_in')}
                         </Button>
                     </p>
                 </CardFooter>

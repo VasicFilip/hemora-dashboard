@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useReports, useUser, useAnalyticsStats, useAnalyticsActivity, useAnalyticsRiskProfile } from "@/lib/hooks"
 import { TrendChart } from "@/components/charts/TrendChart"
 import { DistributionChart } from "@/components/charts/DistributionChart"
+import { useTranslation } from "@/lib/i18n-context"
 import {
   Activity,
   Users,
@@ -24,6 +25,7 @@ export default function Dashboard() {
   const { data: activityData, isLoading: activityLoading } = useAnalyticsActivity(30)
   const { data: riskProfile, isLoading: riskLoading } = useAnalyticsRiskProfile()
   const { data: reportsData, isLoading: reportsLoading } = useReports({ page_size: 10 })
+  const { t } = useTranslation()
 
   const reports = reportsData?.data || []
   const isLoading = statsLoading || activityLoading || reportsLoading || riskLoading
@@ -34,20 +36,20 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Clinical Overview
+            {t('dashboard.title')}
           </h1>
           <p className="text-muted-foreground text-lg">
-            Welcome back, {user?.name || 'Dr. Clinician'}. Here is what is happening today.
+            {t('dashboard.welcome', { name: user?.name || 'Dr. Clinician' })}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" className="hidden sm:flex" asChild>
-            <Link href="/patients">View Patients</Link>
+            <Link href="/patients">{t('dashboard.view_patients')}</Link>
           </Button>
           <Button className="shadow-lg shadow-primary/20 transition-all hover:shadow-primary/40 active:scale-95" asChild>
             <Link href="/upload">
               <Activity className="mr-2 h-4 w-4" />
-              New Analysis
+              {t('dashboard.new_analysis')}
             </Link>
           </Button>
         </div>
@@ -74,7 +76,7 @@ export default function Dashboard() {
           <>
             <Card variant="glass" className="group border-l-4 border-l-blue-500 transition-all hover:shadow-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider">Total Patients</CardTitle>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider">{t('dashboard.total_patients')}</CardTitle>
                 <div className="rounded-full bg-blue-500/10 p-2 text-blue-600 dark:text-blue-400">
                   <Users className="h-4 w-4" />
                 </div>
@@ -82,14 +84,14 @@ export default function Dashboard() {
               <CardContent>
                 <div className="text-3xl font-bold tracking-tight">{stats?.total_patients || 0}</div>
                 <p className="text-xs text-muted-foreground mt-1 font-medium">
-                  Active in your organization
+                  {t('dashboard.active_in_org')}
                 </p>
               </CardContent>
             </Card>
 
             <Card variant="glass" className="group border-l-4 border-l-emerald-500 transition-all hover:shadow-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider">New Analyses</CardTitle>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider">{t('dashboard.new_analyses')}</CardTitle>
                 <div className="rounded-full bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
                   <FileText className="h-4 w-4" />
                 </div>
@@ -97,14 +99,14 @@ export default function Dashboard() {
               <CardContent>
                 <div className="text-3xl font-bold tracking-tight">{stats?.analyses_this_month || 0}</div>
                 <p className="text-xs text-muted-foreground mt-1 font-medium">
-                  Processed this month
+                  {t('dashboard.processed_this_month')}
                 </p>
               </CardContent>
             </Card>
 
             <Card variant="glass" className="group border-l-4 border-l-amber-500 transition-all hover:shadow-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider">Pending Review</CardTitle>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider">{t('dashboard.pending_review')}</CardTitle>
                 <div className="rounded-full bg-amber-500/10 p-2 text-amber-600 dark:text-amber-400">
                   <Clock className="h-4 w-4" />
                 </div>
@@ -112,22 +114,22 @@ export default function Dashboard() {
               <CardContent>
                 <div className="text-3xl font-bold tracking-tight">{stats?.pending_analyses || 0}</div>
                 <p className="text-xs text-muted-foreground mt-1 font-medium">
-                  Awaiting clinician attention
+                  {t('dashboard.awaiting_attention')}
                 </p>
               </CardContent>
             </Card>
 
             <Card variant="glass" className="group border-l-4 border-l-rose-500 transition-all hover:shadow-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider">System Health</CardTitle>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider">{t('dashboard.system_health')}</CardTitle>
                 <div className="rounded-full bg-rose-500/10 p-2 text-rose-600 dark:text-rose-400">
                   <TrendingUp className="h-4 w-4" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold tracking-tight">Active</div>
+                <div className="text-3xl font-bold tracking-tight">{t('dashboard.active')}</div>
                 <p className="text-xs text-muted-foreground mt-1 font-medium">
-                  Engine operating normally
+                  {t('dashboard.engine_normal')}
                 </p>
               </CardContent>
             </Card>
@@ -140,10 +142,10 @@ export default function Dashboard() {
         <Card variant="glass" className="lg:col-span-4 p-0 overflow-hidden">
           <TrendChart
             data={activityData || []}
-            title="Extraction Activity"
-            description="Daily analysis throughput across the system"
+            title={t('dashboard.extraction_activity')}
+            description={t('dashboard.daily_throughput')}
             dataKeys={[
-              { key: "value", label: "Total Analysis", color: "hsl(var(--primary))" }
+              { key: "value", label: t('dashboard.total_analysis'), color: "hsl(var(--primary))" }
             ]}
             height={350}
             transformData={(data: any) => data.map((d: any) => ({ date: d.date, value: d.value }))}
@@ -153,8 +155,8 @@ export default function Dashboard() {
         <Card variant="glass" className="lg:col-span-3 p-0">
           <DistributionChart
             data={riskProfile || []}
-            title="Health Distribution"
-            description="Breakdown of clinical findings by severity"
+            title={t('dashboard.health_distribution')}
+            description={t('dashboard.clinical_findings')}
             groupByKey="label"
             labelFormatter={(v: string) => v}
             height={350}
@@ -167,11 +169,11 @@ export default function Dashboard() {
         <Card variant="glass">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Recent Reports</CardTitle>
-              <CardDescription>Latest patient interpretations</CardDescription>
+              <CardTitle>{t('dashboard.recent_reports')}</CardTitle>
+              <CardDescription>{t('dashboard.latest_interpretations')}</CardDescription>
             </div>
             <Button variant="ghost" size="sm" className="hidden sm:flex" asChild>
-              <Link href="/reports">View All</Link>
+              <Link href="/reports">{t('dashboard.view_all')}</Link>
             </Button>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -192,27 +194,27 @@ export default function Dashboard() {
                 <div className="bg-secondary/20 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
                   <FileText className="h-6 w-6 opacity-20" />
                 </div>
-                <p className="text-sm font-medium">No reports generated yet</p>
-                <p className="text-xs mt-1">Submit a blood test to begin</p>
+                <p className="text-sm font-medium">{t('dashboard.no_reports')}</p>
+                <p className="text-xs mt-1">{t('dashboard.submit_blood_test')}</p>
               </div>
             ) : (
               <div className="space-y-5">
                 {reports.slice(0, 4).map((report) => {
                   const patientName = report.patient
                     ? `${report.patient.firstName} ${report.patient.lastName}`
-                    : 'External Patient'
-                  const testType = report.source || 'Biochemical Panel'
+                    : t('dashboard.external_patient')
+                  const testType = report.source || t('dashboard.biochemical_panel')
                   const status = report.status?.toLowerCase() || 'normal'
 
                   let badgeStyles = "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20"
-                  let badgeText = "Normal"
+                  let badgeText = t('dashboard.normal')
 
                   if (status.includes('abnormal') || status.includes('critical')) {
                     badgeStyles = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
-                    badgeText = "Action Reqd"
+                    badgeText = t('dashboard.action_reqd')
                   } else if (status.includes('borderline') || status.includes('review')) {
                     badgeStyles = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                    badgeText = "Review"
+                    badgeText = t('dashboard.review')
                   }
 
                   return (
@@ -231,7 +233,7 @@ export default function Dashboard() {
             )}
             <Button variant="secondary" className="w-full mt-2 font-semibold" asChild>
               <Link href="/patients">
-                Access All Patient Records
+                {t('dashboard.access_all')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -242,38 +244,38 @@ export default function Dashboard() {
         <div className="space-y-6">
           <Card variant="glass" className="border-l-4 border-l-primary">
             <CardHeader>
-              <CardTitle className="text-lg">Quick Workflows</CardTitle>
+              <CardTitle className="text-lg">{t('dashboard.quick_workflows')}</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button className="justify-start h-auto py-3 bg-white/10 hover:bg-white/20 text-foreground border-none shadow-sm" variant="outline" asChild>
                 <Link href="/patients/new">
                   <div className="flex flex-col items-start gap-0.5 text-left">
-                    <span className="flex items-center gap-2 font-bold"><Users className="h-4 w-4 text-blue-500" /> New Patient</span>
-                    <span className="text-[10px] text-muted-foreground">Register registration</span>
+                    <span className="flex items-center gap-2 font-bold"><Users className="h-4 w-4 text-blue-500" /> {t('dashboard.new_patient')}</span>
+                    <span className="text-[10px] text-muted-foreground">{t('dashboard.register')}</span>
                   </div>
                 </Link>
               </Button>
               <Button className="justify-start h-auto py-3 bg-white/10 hover:bg-white/20 text-foreground border-none shadow-sm" variant="outline" asChild>
                 <Link href="/upload">
                   <div className="flex flex-col items-start gap-0.5 text-left">
-                    <span className="flex items-center gap-2 font-bold"><Activity className="h-4 w-4 text-emerald-500" /> Fast Scan</span>
-                    <span className="text-[10px] text-muted-foreground">PDF Extraction</span>
+                    <span className="flex items-center gap-2 font-bold"><Activity className="h-4 w-4 text-emerald-500" /> {t('dashboard.fast_scan')}</span>
+                    <span className="text-[10px] text-muted-foreground">{t('dashboard.pdf_extraction')}</span>
                   </div>
                 </Link>
               </Button>
               <Button className="justify-start h-auto py-3 bg-white/10 hover:bg-white/20 text-foreground border-none shadow-sm" variant="outline" asChild>
                 <Link href="/analytics">
                   <div className="flex flex-col items-start gap-0.5 text-left">
-                    <span className="flex items-center gap-2 font-bold"><TrendingUp className="h-4 w-4 text-indigo-500" /> Analytics</span>
-                    <span className="text-[10px] text-muted-foreground">Detailed insights</span>
+                    <span className="flex items-center gap-2 font-bold"><TrendingUp className="h-4 w-4 text-indigo-500" /> {t('dashboard.analytics')}</span>
+                    <span className="text-[10px] text-muted-foreground">{t('dashboard.detailed_insights')}</span>
                   </div>
                 </Link>
               </Button>
               <Button className="justify-start h-auto py-3 bg-white/10 hover:bg-white/20 text-foreground border-none shadow-sm" variant="outline" asChild>
                 <Link href="/settings">
                   <div className="flex flex-col items-start gap-0.5 text-left">
-                    <span className="flex items-center gap-2 font-bold"><FileText className="h-4 w-4 text-rose-500" /> Management</span>
-                    <span className="text-[10px] text-muted-foreground">Org Settings</span>
+                    <span className="flex items-center gap-2 font-bold"><FileText className="h-4 w-4 text-rose-500" /> {t('dashboard.management')}</span>
+                    <span className="text-[10px] text-muted-foreground">{t('dashboard.org_settings')}</span>
                   </div>
                 </Link>
               </Button>
@@ -287,9 +289,9 @@ export default function Dashboard() {
                   <AlertTriangle className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm">Action Reminder</h4>
+                  <h4 className="font-bold text-sm">{t('dashboard.action_reminder')}</h4>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    You have <span className="text-foreground font-bold">{stats?.pending_analyses || 0}</span> reports awaiting your clinical sign-off.
+                    {t('dashboard.pending_signoff', { count: stats?.pending_analyses || 0 })}
                   </p>
                 </div>
               </div>
