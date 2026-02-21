@@ -8,6 +8,8 @@ import * as z from "zod"
 import { toast } from "sonner"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Form,
     FormControl,
@@ -17,9 +19,8 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, PlusCircle } from "lucide-react"
+import { useTranslation } from "@/lib/i18n-context"
 
 const formSchema = z.object({
     name: z.string().min(2, "Clinic name must be at least 2 characters").trim(),
@@ -31,6 +32,7 @@ const formSchema = z.object({
 export default function OnboardingPage() {
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
+    const { t } = useTranslation()
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -46,12 +48,10 @@ export default function OnboardingPage() {
         setIsLoading(true)
         try {
             await api.createOrganization(values)
-            toast.success("Organization created successfully")
-            // Force a hard refresh or redirect to dashboard
-            // We might need to refresh user profile state if it's cached
+            toast.success(t('onboarding.success'))
             window.location.href = "/"
         } catch (error) {
-            toast.error("Failed to create organization. It might already exist.")
+            toast.error(t('onboarding.failed'))
             console.error(error)
         } finally {
             setIsLoading(false)
@@ -63,9 +63,9 @@ export default function OnboardingPage() {
             <div className="container flex h-screen w-screen flex-col items-center justify-center">
                 <Card className="w-full max-w-lg">
                     <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-bold">Create Your Clinic</CardTitle>
+                        <CardTitle className="text-2xl font-bold">{t('onboarding.title')}</CardTitle>
                         <CardDescription>
-                            Enter your clinic details to get started. You will be the administrator for this organization.
+                            {t('onboarding.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -76,7 +76,7 @@ export default function OnboardingPage() {
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Clinic Name</FormLabel>
+                                            <FormLabel>{t('onboarding.clinic_name')}</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="Acme Clinic" {...field} />
                                             </FormControl>
@@ -89,12 +89,12 @@ export default function OnboardingPage() {
                                     name="email"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Contact Email</FormLabel>
+                                            <FormLabel>{t('onboarding.contact_email')}</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="clinic@example.com" type="email" {...field} />
                                             </FormControl>
                                             <FormDescription>
-                                                This email will be used for official clinic communication.
+                                                {t('onboarding.email_hint')}
                                             </FormDescription>
                                             <FormMessage />
                                         </FormItem>
@@ -105,9 +105,9 @@ export default function OnboardingPage() {
                                     name="phone"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Phone Number</FormLabel>
+                                            <FormLabel>{t('onboarding.phone')}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="+1 234 567 890" {...field} />
+                                                <Input placeholder="+41 234 567 890" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -118,9 +118,9 @@ export default function OnboardingPage() {
                                     name="address"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Address</FormLabel>
+                                            <FormLabel>{t('onboarding.address')}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="123 Medical St, City" {...field} />
+                                                <Input placeholder="Musterstrasse 1, Stadt" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -130,12 +130,12 @@ export default function OnboardingPage() {
                                     {isLoading ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Creating...
+                                            {t('onboarding.creating')}
                                         </>
                                     ) : (
                                         <>
                                             <PlusCircle className="mr-2 h-4 w-4" />
-                                            Create Organization
+                                            {t('onboarding.create')}
                                         </>
                                     )}
                                 </Button>

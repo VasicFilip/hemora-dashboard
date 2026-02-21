@@ -8,11 +8,13 @@ import { TrendChart } from "@/components/charts/TrendChart"
 import { DistributionChart } from "@/components/charts/DistributionChart"
 import { ComparisonChart } from "@/components/charts/ComparisonChart"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useTranslation } from "@/lib/i18n-context"
 
 export default function AnalyticsPage() {
   const { data: patientsData, isLoading: patientsLoading } = usePatients({ page_size: 100 })
   const { data: reportsData, isLoading: reportsLoading } = useReports({ page_size: 100 })
   const { data: labTestsData, isLoading: labTestsLoading } = useLabTests({ page_size: 100 })
+  const { t } = useTranslation()
 
   const reports = reportsData?.data || []
   const patients = patientsData?.data || []
@@ -21,9 +23,9 @@ export default function AnalyticsPage() {
   return (
     <div className="flex flex-col space-y-6 p-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Clinical Analytics</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title')}</h1>
         <p className="text-muted-foreground">
-          Detailed insights into patient data and analysis trends
+          {t('analytics.description')}
         </p>
       </div>
 
@@ -32,10 +34,10 @@ export default function AnalyticsPage() {
           <div className="lg:col-span-4">
             <TrendChart
               data={reports}
-              title="Analysis Volume"
-              description="Daily number of blood test analyses performed"
+              title={t('analytics.analysis_volume')}
+              description={t('analytics.daily_analyses')}
               dataKeys={[
-                { key: "count", label: "Analyses", color: "var(--chart-1)" }
+                { key: "count", label: t('analytics.analyses'), color: "var(--chart-1)" }
               ]}
               height={350}
             />
@@ -43,8 +45,8 @@ export default function AnalyticsPage() {
           <div className="lg:col-span-3">
             <DistributionChart
               data={reports}
-              title="Analysis Status"
-              description="Breakdown of all processed tests"
+              title={t('analytics.analysis_status')}
+              description={t('analytics.breakdown')}
               groupByKey="status"
               labelFormatter={(v: string) => v.charAt(0).toUpperCase() + v.slice(1)}
               height={350}
@@ -55,19 +57,19 @@ export default function AnalyticsPage() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Comparison Metrics</CardTitle>
-              <CardDescription>System growth and engagement</CardDescription>
+              <CardTitle>{t('analytics.comparison')}</CardTitle>
+              <CardDescription>{t('analytics.system_growth')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Analyses Per Patient</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('analytics.per_patient')}</p>
                   <p className="text-2xl font-bold">
                     {patients.length > 0 ? (reports.length / patients.length).toFixed(1) : '0'}
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('analytics.completion_rate')}</p>
                   <p className="text-2xl font-bold">
                     {reports.length > 0 ?
                       ((reports.filter(r => r.status === 'analyzed' || r.status === 'complete').length / reports.length) * 100).toFixed(0) + '%'
@@ -80,28 +82,28 @@ export default function AnalyticsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Resource Summary</CardTitle>
-              <CardDescription>Overview of active system entities</CardDescription>
+              <CardTitle>{t('analytics.resource_summary')}</CardTitle>
+              <CardDescription>{t('analytics.active_entities')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Active Patients</span>
+                  <span className="text-sm">{t('analytics.active_patients')}</span>
                 </div>
                 <span className="font-bold">{patients.length}</span>
               </div>
               <div className="flex items-center justify-between mt-4">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Total Reports</span>
+                  <span className="text-sm">{t('analytics.total_reports')}</span>
                 </div>
                 <span className="font-bold">{reports.length}</span>
               </div>
               <div className="flex items-center justify-between mt-4">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Analyses</span>
+                  <span className="text-sm">{t('analytics.analyses')}</span>
                 </div>
                 <span className="font-bold">{reports.length}</span>
               </div>

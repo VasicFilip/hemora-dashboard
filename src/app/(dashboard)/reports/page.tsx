@@ -30,17 +30,18 @@ import {
   Loader2,
   AlertCircle
 } from "lucide-react"
+import { useTranslation } from "@/lib/i18n-context"
 
 export default function ReportsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const { t } = useTranslation()
 
   const { data: reportsData, isLoading, error } = useReports({ page_size: 100 })
 
   const reports = reportsData?.data || []
 
-  // Filter reports based on search query
   const filteredReports = reports.filter(report => {
     const searchLower = searchQuery.toLowerCase()
     const patientName = report.patient
@@ -51,19 +52,17 @@ export default function ReportsPage() {
     return patientName.includes(searchLower) || labName.includes(searchLower)
   })
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredReports.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   const paginatedReports = filteredReports.slice(startIndex, endIndex)
 
-  // Reset to page 1 when search changes
   React.useEffect(() => {
     setCurrentPage(1)
   }, [searchQuery])
 
   const formatDate = (dateString: string) => {
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat("de-DE", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -76,13 +75,13 @@ export default function ReportsPage() {
     const statusLower = status?.toLowerCase() || 'unknown'
 
     if (statusLower.includes('complete') || statusLower === 'analyzed') {
-      return <Badge variant="default">Complete</Badge>
+      return <Badge variant="default">{t('reports.status_complete')}</Badge>
     }
     if (statusLower.includes('pending') || statusLower === 'analyzing') {
-      return <Badge variant="secondary">Processing</Badge>
+      return <Badge variant="secondary">{t('reports.status_processing')}</Badge>
     }
     if (statusLower.includes('failed') || statusLower.includes('error')) {
-      return <Badge variant="destructive">Failed</Badge>
+      return <Badge variant="destructive">{t('reports.status_failed')}</Badge>
     }
     return <Badge variant="outline">{status}</Badge>
   }
@@ -92,15 +91,15 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('reports.title')}</h1>
           <p className="text-muted-foreground">
-            View and manage all analysis reports
+            {t('reports.description')}
           </p>
         </div>
         <Button asChild>
           <Link href="/upload">
             <Activity className="mr-2 h-4 w-4" />
-            New Analysis
+            {t('reports.new_analysis')}
           </Link>
         </Button>
       </div>
@@ -109,20 +108,20 @@ export default function ReportsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reports.total_reports')}</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{reports.length}</div>
             <p className="text-xs text-muted-foreground">
-              All time analyses
+              {t('reports.all_time')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reports.this_month')}</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -135,14 +134,14 @@ export default function ReportsPage() {
               }).length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Reports generated
+              {t('reports.reports_generated')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unique Patients</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reports.unique_patients')}</CardTitle>
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -150,7 +149,7 @@ export default function ReportsPage() {
               {new Set(reports.map(r => r.patient_id)).size}
             </div>
             <p className="text-xs text-muted-foreground">
-              Patients analyzed
+              {t('reports.patients_analyzed')}
             </p>
           </CardContent>
         </Card>
@@ -161,15 +160,15 @@ export default function ReportsPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>All Reports</CardTitle>
+              <CardTitle>{t('reports.all_reports')}</CardTitle>
               <CardDescription>
-                Complete list of all analysis reports
+                {t('reports.complete_list')}
               </CardDescription>
             </div>
             <div className="relative w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by patient or lab..."
+                placeholder={t('reports.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8"
@@ -194,28 +193,28 @@ export default function ReportsPage() {
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-12">
               <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Error Loading Reports</h3>
+              <h3 className="text-lg font-semibold mb-2">{t('reports.error_title')}</h3>
               <p className="text-muted-foreground text-center">
-                Failed to load reports. Please try again later.
+                {t('reports.error_description')}
               </p>
             </div>
           ) : filteredReports.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {searchQuery ? 'No reports found' : 'No reports yet'}
+                {searchQuery ? t('reports.no_reports_found') : t('reports.no_reports_yet')}
               </h3>
               <p className="text-muted-foreground text-center mb-4">
                 {searchQuery
-                  ? 'Try adjusting your search query'
-                  : 'Start by uploading a blood test analysis'
+                  ? t('reports.adjust_search')
+                  : t('reports.start_uploading')
                 }
               </p>
               {!searchQuery && (
                 <Button asChild>
                   <Link href="/upload">
                     <Activity className="mr-2 h-4 w-4" />
-                    Create First Report
+                    {t('reports.create_first')}
                   </Link>
                 </Button>
               )}
@@ -224,19 +223,19 @@ export default function ReportsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Patient</TableHead>
-                  <TableHead>Lab</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Markers</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('reports.col_patient')}</TableHead>
+                  <TableHead>{t('reports.col_lab')}</TableHead>
+                  <TableHead>{t('reports.col_date')}</TableHead>
+                  <TableHead>{t('reports.col_status')}</TableHead>
+                  <TableHead>{t('reports.col_markers')}</TableHead>
+                  <TableHead className="text-right">{t('reports.col_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedReports.map((report) => {
                   const patientName = report.patient
                     ? `${report.patient.firstName} ${report.patient.lastName}`
-                    : 'Unknown Patient'
+                    : t('reports.unknown_patient')
 
                   return (
                     <TableRow key={report.id}>
@@ -256,7 +255,7 @@ export default function ReportsPage() {
                         <Button size="sm" variant="outline" asChild>
                           <Link href={`/results/${report.analysis_id}`}>
                             <Eye className="mr-1 h-3 w-3" />
-                            View
+                            {t('reports.view')}
                           </Link>
                         </Button>
                       </TableCell>
@@ -271,7 +270,7 @@ export default function ReportsPage() {
           {!isLoading && !error && filteredReports.length > itemsPerPage && (
             <div className="flex items-center justify-between px-2 py-4">
               <div className="text-sm text-muted-foreground">
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredReports.length)} of {filteredReports.length} reports
+                {t('reports.showing', { from: startIndex + 1, to: Math.min(endIndex, filteredReports.length), total: filteredReports.length })}
               </div>
               <Pagination>
                 <PaginationContent>

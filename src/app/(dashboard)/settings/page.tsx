@@ -39,13 +39,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-
 import { useEffect } from "react"
+import { useTranslation } from "@/lib/i18n-context"
 
 export default function SettingsPage() {
   const { data: userData } = useUser()
   const user = userData as UserMeResponse | undefined
   const { data: org } = useOrganization()
+  const { t } = useTranslation()
 
   const updateProfile = useUpdateProfile()
   const changePassword = useChangePassword()
@@ -63,7 +64,6 @@ export default function SettingsPage() {
     email: ""
   })
 
-  // Local state for settings to avoid flicker
   const [localSettings, setLocalSettings] = useState<Record<string, any>>({})
 
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function SettingsPage() {
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (passwordData.new_password !== passwordData.confirm_password) {
-      showToast.error("Passwords do not match")
+      showToast.error(t('settings.passwords_no_match'))
       return
     }
     changePassword.mutate({
@@ -107,7 +107,7 @@ export default function SettingsPage() {
       <div className="flex items-center justify-center h-[60vh]">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground animate-pulse font-medium">Loading your settings...</p>
+          <p className="text-muted-foreground animate-pulse font-medium">{t('settings.loading_settings')}</p>
         </div>
       </div>
     )
@@ -119,27 +119,27 @@ export default function SettingsPage() {
     <div className="flex flex-col space-y-6 sm:space-y-8 p-4 sm:p-8 max-w-[1200px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div>
         <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-          Account Settings
+          {t('settings.title')}
         </h1>
         <p className="text-muted-foreground text-lg">
-          Manage your personal profile, security preferences, and organization.
+          {t('settings.description')}
         </p>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="bg-secondary/50 p-1 lg:w-auto w-full overflow-x-auto justify-start">
           <TabsTrigger value="profile" className="gap-2">
-            <User className="h-4 w-4" /> Profile
+            <User className="h-4 w-4" /> {t('settings.tab_profile')}
           </TabsTrigger>
           <TabsTrigger value="security" className="gap-2">
-            <Lock className="h-4 w-4" /> Security
+            <Lock className="h-4 w-4" /> {t('settings.tab_security')}
           </TabsTrigger>
           <TabsTrigger value="preferences" className="gap-2">
-            <SettingsIcon className="h-4 w-4" /> Preferences
+            <SettingsIcon className="h-4 w-4" /> {t('settings.tab_preferences')}
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger value="organization" className="gap-2">
-              <Building className="h-4 w-4" /> Organization
+              <Building className="h-4 w-4" /> {t('settings.tab_organization')}
             </TabsTrigger>
           )}
         </TabsList>
@@ -148,14 +148,14 @@ export default function SettingsPage() {
         <TabsContent value="profile" className="space-y-6">
           <Card className="border-none shadow-lg ring-1 ring-white/10 bg-card/40 backdrop-blur-xl transition-all hover:shadow-primary/5">
             <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>Update your public profile and contact details.</CardDescription>
+              <CardTitle>{t('settings.personal_info')}</CardTitle>
+              <CardDescription>{t('settings.update_profile')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <form onSubmit={handleProfileSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">{t('settings.full_name')}</Label>
                     <Input
                       id="name"
                       placeholder="Dr. John Doe"
@@ -165,7 +165,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
+                    <Label htmlFor="email">{t('settings.email_address')}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -178,7 +178,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex justify-end">
                   <Button type="submit" disabled={updateProfile.isPending}>
-                    {updateProfile.isPending ? "Saving..." : "Save Changes"}
+                    {updateProfile.isPending ? t('settings.saving') : t('settings.save_changes')}
                   </Button>
                 </div>
               </form>
@@ -191,16 +191,20 @@ export default function SettingsPage() {
                 <ShieldCheck className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-lg">Role & Permissions</CardTitle>
-                <CardDescription>Your current access level in the organization.</CardDescription>
+                <CardTitle className="text-lg">{t('settings.role_permissions')}</CardTitle>
+                <CardDescription>{t('settings.access_level')}</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="pb-6">
               <div className="flex items-center gap-2">
                 <Badge className="capitalize px-4 py-1 text-sm font-bold bg-primary/20 text-primary border-none">
-                  {user?.role} Access
+                  {t('settings.access_badge', { role: user?.role || '' })}
                 </Badge>
-                <span className="text-sm text-muted-foreground">member since {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'}</span>
+                <span className="text-sm text-muted-foreground">
+                  {t('settings.member_since', {
+                    date: user?.created_at ? new Date(user.created_at).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' }) : 'N/A'
+                  })}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -210,13 +214,13 @@ export default function SettingsPage() {
         <TabsContent value="security" className="space-y-6">
           <Card className="border-none shadow-lg ring-1 ring-white/10 bg-card/40 backdrop-blur-xl">
             <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription>Secure your account with a strong password.</CardDescription>
+              <CardTitle>{t('settings.change_password')}</CardTitle>
+              <CardDescription>{t('settings.secure_account')}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
                 <div className="space-y-2">
-                  <Label htmlFor="old-password">Current Password</Label>
+                  <Label htmlFor="old-password">{t('settings.current_password')}</Label>
                   <Input
                     id="old-password"
                     type="password"
@@ -226,7 +230,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="new-password">New Password</Label>
+                  <Label htmlFor="new-password">{t('settings.new_password')}</Label>
                   <Input
                     id="new-password"
                     type="password"
@@ -236,7 +240,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm New Password</Label>
+                  <Label htmlFor="confirm-password">{t('settings.confirm_password')}</Label>
                   <Input
                     id="confirm-password"
                     type="password"
@@ -246,7 +250,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <Button type="submit" className="w-full sm:w-auto" disabled={changePassword.isPending}>
-                  {changePassword.isPending ? "Updating..." : "Update Password"}
+                  {changePassword.isPending ? t('settings.updating') : t('settings.update_password')}
                 </Button>
               </form>
             </CardContent>
@@ -257,16 +261,16 @@ export default function SettingsPage() {
         <TabsContent value="preferences" className="space-y-6">
           <Card className="border-none shadow-lg ring-1 ring-white/10 bg-card/40 backdrop-blur-xl">
             <CardHeader>
-              <CardTitle>Interface & Language</CardTitle>
-              <CardDescription>Customize how Hemora looks and feels.</CardDescription>
+              <CardTitle>{t('settings.interface_language')}</CardTitle>
+              <CardDescription>{t('settings.customize_hemora')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-base font-bold">Analysis Engine Language</Label>
-                      <p className="text-xs text-muted-foreground">Default language for new blood analyses. Fixed to German/English.</p>
+                      <Label className="text-base font-bold">{t('settings.analysis_language')}</Label>
+                      <p className="text-xs text-muted-foreground">{t('settings.analysis_language_hint')}</p>
                     </div>
                     <Select
                       value={localSettings.language || "de"}
@@ -285,36 +289,6 @@ export default function SettingsPage() {
                     </Select>
                   </div>
                 </div>
-
-                {/* <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base font-bold">Email Notifications</Label>
-                      <p className="text-xs text-muted-foreground">Receive alerts for critical clinical results.</p>
-                    </div>
-                    <Button
-                      variant={(localSettings.notifications ?? true) ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleSettingChange('notifications', !(localSettings.notifications ?? true))}
-                    >
-                      {(localSettings.notifications ?? true) ? "On" : "Off"}
-                    </Button>
-                  </div>
-                  <Separator className="bg-white/5" />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base font-bold">Compact View</Label>
-                      <p className="text-xs text-muted-foreground">Optimized interface for high-density data management.</p>
-                    </div>
-                    <Button
-                      variant={localSettings.compactMode ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleSettingChange('compactMode', !localSettings.compactMode)}
-                    >
-                      {localSettings.compactMode ? "Active" : "Disabled"}
-                    </Button>
-                  </div>
-                </div> */}
               </div>
             </CardContent>
           </Card>
@@ -327,25 +301,25 @@ export default function SettingsPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Organization Details</CardTitle>
-                    <CardDescription>Manage your clinic's identity and settings.</CardDescription>
+                    <CardTitle>{t('settings.org_details')}</CardTitle>
+                    <CardDescription>{t('settings.manage_clinic')}</CardDescription>
                   </div>
                   <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-3 font-bold">
-                    PREMIUM PLAN
+                    {t('settings.premium_plan')}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label>Organization Name</Label>
+                    <Label>{t('settings.org_name')}</Label>
                     <Input
                       defaultValue={org?.name}
                       className="bg-secondary/20 border-none font-semibold text-lg py-6"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Contact Email</Label>
+                    <Label>{t('settings.contact_email')}</Label>
                     <Input
                       defaultValue={org?.email}
                       className="bg-secondary/20 border-none py-6"
@@ -355,7 +329,7 @@ export default function SettingsPage() {
               </CardContent>
               <CardFooter className="bg-white/5 py-4 border-t border-white/5">
                 <Button variant="outline" size="sm" className="ml-auto flex items-center gap-2">
-                  <Save className="h-4 w-4" /> Save Organization
+                  <Save className="h-4 w-4" /> {t('settings.save_org')}
                 </Button>
               </CardFooter>
             </Card>
@@ -363,17 +337,17 @@ export default function SettingsPage() {
             <Card className="border-none bg-indigo-500/5 ring-1 ring-indigo-500/10">
               <CardHeader>
                 <CardTitle className="text-indigo-400 flex items-center gap-2 font-bold">
-                  <Users className="h-5 w-5" /> Team Members
+                  <Users className="h-5 w-5" /> {t('settings.team_members')}
                 </CardTitle>
-                <CardDescription>Invite and manage clinicians in your team.</CardDescription>
+                <CardDescription>{t('settings.invite_manage')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4 py-4 rounded-lg bg-white/5 px-4 mb-4">
                   <div className="flex-1">
                     <p className="text-sm font-bold">{org?.name} Team</p>
-                    <p className="text-xs text-muted-foreground">1/10 Seats Occupied</p>
+                    <p className="text-xs text-muted-foreground">{t('settings.seats_occupied')}</p>
                   </div>
-                  <Button size="sm">Invite Member</Button>
+                  <Button size="sm">{t('settings.invite_member')}</Button>
                 </div>
               </CardContent>
             </Card>

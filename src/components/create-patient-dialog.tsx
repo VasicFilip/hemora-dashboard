@@ -33,6 +33,7 @@ import {
 import { Plus } from "lucide-react"
 import { useCreatePatient } from "@/lib/hooks"
 import { toast } from "sonner"
+import { useTranslation } from "@/lib/i18n-context"
 
 const patientSchema = z.object({
     firstName: z.string().min(2, "First name must be at least 2 characters").trim(),
@@ -53,6 +54,7 @@ type PatientFormData = z.infer<typeof patientSchema>
 export function CreatePatientDialog() {
     const [open, setOpen] = useState(false)
     const createPatientMutation = useCreatePatient()
+    const { t } = useTranslation()
 
     const form = useForm<PatientFormData>({
         resolver: zodResolver(patientSchema),
@@ -67,7 +69,6 @@ export function CreatePatientDialog() {
         },
     })
 
-    // Reset form when dialog closes
     const onOpenChange = (newOpen: boolean) => {
         setOpen(newOpen)
         if (!newOpen) {
@@ -86,14 +87,12 @@ export function CreatePatientDialog() {
                 gender: data.gender,
                 address: data.address?.trim() || undefined,
             })
-            toast.success("Patient created successfully")
+            toast.success(t('create_patient.success'))
             setOpen(false)
             form.reset()
         } catch (error) {
-            // Error handled by the mutation hook or global error handler,
-            // but we can add specific toast here if needed.
             console.error("Failed to create patient", error)
-            toast.error("Failed to create patient")
+            toast.error(t('create_patient.failed'))
         }
     }
 
@@ -102,100 +101,95 @@ export function CreatePatientDialog() {
             <DialogTrigger asChild>
                 <Button>
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Patient
+                    {t('create_patient.trigger')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Add New Patient</DialogTitle>
+                    <DialogTitle>{t('create_patient.title')}</DialogTitle>
                     <DialogDescription>
-                        Enter patient information to create a new record.
+                        {t('create_patient.description')}
                     </DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-                        {/* First Name */}
                         <FormField
                             control={form.control}
                             name="firstName"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>First Name *</FormLabel>
+                                    <FormLabel>{t('create_patient.first_name')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter patient's first name" {...field} />
+                                        <Input placeholder={t('create_patient.first_name_placeholder')} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
-                        {/* Last Name */}
                         <FormField
                             control={form.control}
                             name="lastName"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Last Name *</FormLabel>
+                                    <FormLabel>{t('create_patient.last_name')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter patient's last name" {...field} />
+                                        <Input placeholder={t('create_patient.last_name_placeholder')} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
-                        {/* Email */}
                         <FormField
                             control={form.control}
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Email Address</FormLabel>
+                                    <FormLabel>{t('create_patient.email')}</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="email"
-                                            placeholder="patient@email.com"
+                                            placeholder={t('create_patient.email_placeholder')}
                                             {...field}
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Used for sending reports and notifications
+                                        {t('create_patient.email_hint')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
-                        {/* Phone */}
                         <FormField
                             control={form.control}
                             name="phone"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Phone Number</FormLabel>
+                                    <FormLabel>{t('create_patient.phone')}</FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder="+1 (555) 123-4567"
+                                            placeholder={t('create_patient.phone_placeholder')}
                                             {...field}
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Optional contact number
+                                        {t('create_patient.phone_hint')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
-                        {/* Date of Birth & Sex Row */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="dateOfBirth"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Date of Birth *</FormLabel>
+                                        <FormLabel>{t('create_patient.dob')}</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="date"
@@ -212,17 +206,17 @@ export function CreatePatientDialog() {
                                 name="gender"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Gender *</FormLabel>
+                                        <FormLabel>{t('create_patient.gender')}</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select gender" />
+                                                    <SelectValue placeholder={t('create_patient.gender_placeholder')} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="Male">Male</SelectItem>
-                                                <SelectItem value="Female">Female</SelectItem>
-                                                <SelectItem value="Other">Other</SelectItem>
+                                                <SelectItem value="Male">{t('create_patient.male')}</SelectItem>
+                                                <SelectItem value="Female">{t('create_patient.female')}</SelectItem>
+                                                <SelectItem value="Other">{t('create_patient.other')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -231,13 +225,12 @@ export function CreatePatientDialog() {
                             />
                         </div>
 
-                        {/* Actions */}
                         <div className="flex items-center justify-end space-x-4 pt-4">
                             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                                Cancel
+                                {t('create_patient.cancel')}
                             </Button>
                             <Button type="submit" disabled={createPatientMutation.isPending}>
-                                {createPatientMutation.isPending ? "Creating..." : "Create Patient"}
+                                {createPatientMutation.isPending ? t('create_patient.creating') : t('create_patient.create')}
                             </Button>
                         </div>
                     </form>
