@@ -13,6 +13,7 @@ export interface PatientResponse {
   is_active?: boolean
   created_at: string
   updated_at: string
+  lastAnalysisDate?: string
 }
 
 export interface PatientCreate {
