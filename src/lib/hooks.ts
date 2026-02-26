@@ -139,6 +139,36 @@ export function useDeletePatient() {
   })
 }
 
+export function useDeactivatePatient() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => api.updatePatient(id, { is_active: false }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.patients })
+      showToast.success('Patient deactivated', 'Patient has been deactivated')
+    },
+    onError: (error) => {
+      showToast.apiError(error, 'Failed to deactivate patient')
+    },
+  })
+}
+
+export function useActivatePatient() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => api.updatePatient(id, { is_active: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.patients })
+      showToast.success('Patient activated', 'Patient has been activated')
+    },
+    onError: (error) => {
+      showToast.apiError(error, 'Failed to activate patient')
+    },
+  })
+}
+
 // Lab Test Hooks
 export function useLabTests(params?: { page?: number; page_size?: number }) {
   return useQuery({
