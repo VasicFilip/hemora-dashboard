@@ -78,7 +78,7 @@ export function useUser(): UseQueryResult<UserResponse, Error> {
 }
 
 // Patient Hooks
-export function usePatients(params?: { page?: number; page_size?: number }) {
+export function usePatients(params?: { page?: number; page_size?: number; include_inactive?: boolean }) {
   return useQuery({
     queryKey: [...queryKeys.patients, params],
     queryFn: () => api.getPatients(params),
@@ -135,6 +135,38 @@ export function useDeletePatient() {
     },
     onError: (error) => {
       showToast.apiError(error, 'Failed to delete patient')
+    },
+  })
+}
+
+export function useActivatePatient() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => api.updatePatient(id, { is_active: true }),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.patient(id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.patients })
+      showToast.success('Patient activated', 'Patient has been successfully activated')
+    },
+    onError: (error) => {
+      showToast.apiError(error, 'Failed to activate patient')
+    },
+  })
+}
+
+export function useDeactivatePatient() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => api.updatePatient(id, { is_active: false }),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.patient(id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.patients })
+      showToast.success('Patient deactivated', 'Patient has been successfully deactivated')
+    },
+    onError: (error) => {
+      showToast.apiError(error, 'Failed to deactivate patient')
     },
   })
 }
@@ -208,7 +240,7 @@ export function useAnalysisStatus(analysisId: string) {
       if (!data) return false
       // Poll if extracting or analyzing (every 5 seconds to reduce server load)
       if (data.status === 'extracting' || data.status === 'analyzing' || data.status === 'uploaded') {
-        return 15000
+        return 5000
       }
       return false
     }

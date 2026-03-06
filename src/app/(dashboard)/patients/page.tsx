@@ -34,7 +34,7 @@ export default function PatientsPage() {
   const itemsPerPage = 10
   const { t } = useTranslation()
 
-  const { data: patientsData, isLoading, error } = usePatients({ page_size: 200 })
+  const { data: patientsData, isLoading, error } = usePatients({ page_size: 200, include_inactive: true })
   const deactivatePatient = useDeactivatePatient()
   const activatePatient = useActivatePatient()
 
@@ -56,7 +56,7 @@ export default function PatientsPage() {
     setCurrentPage(1)
   }, [searchTerm])
 
-  const calculateAge = (dateOfBirth: string) => {
+  const calculateAge = (dateOfBirth?: string) => {
     if (!dateOfBirth) return '-'
     const today = new Date()
     const birthDate = new Date(dateOfBirth)
@@ -68,7 +68,7 @@ export default function PatientsPage() {
     return age
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string | Date) => {
     if (!dateString) return '-'
     return new Date(dateString).toLocaleDateString('de-DE')
   }
@@ -167,15 +167,15 @@ export default function PatientsPage() {
                     <TableCell>{patient.gender || '-'}</TableCell>
                     <TableCell className="max-w-[150px] truncate">{patient.email || '-'}</TableCell>
                     <TableCell>{patient.phone || '-'}</TableCell>
-                    <TableCell>{formatDate(patient.createdAt)}</TableCell>
+                    <TableCell>{formatDate(patient.created_at)}</TableCell>
                     <TableCell>
-                      {patient.lastAnalysisDate
-                        ? formatDate(patient.lastAnalysisDate)
+                      {(patient as any).lastAnalysisDate
+                        ? formatDate((patient as any).lastAnalysisDate)
                         : t('patients.no_analysis')}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={patient.isActive ? "default" : "secondary"}>
-                        {patient.isActive ? t('patients.active') : t('patients.inactive')}
+                      <Badge variant={patient.is_active ? "default" : "secondary"}>
+                        {patient.is_active ? t('patients.active') : t('patients.inactive')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -192,7 +192,7 @@ export default function PatientsPage() {
                               {t('patients.view_details')}
                             </Link>
                           </DropdownMenuItem>
-                          {patient.isActive ? (
+                          {patient.is_active ? (
                             <DropdownMenuItem
                               onClick={() => deactivatePatient.mutate(patient.id)}
                               className="text-destructive"

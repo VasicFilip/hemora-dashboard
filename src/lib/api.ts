@@ -370,11 +370,12 @@ export const api = {
 
   // Patients
   // Patients
-  getPatients: (params?: { page?: number; page_size?: number; search?: string }) => {
+  getPatients: (params?: { page?: number; page_size?: number; search?: string; include_inactive?: boolean }) => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.append('page', params.page.toString())
     if (params?.page_size) searchParams.append('page_size', params.page_size.toString())
     if (params?.search) searchParams.append('search', params.search)
+    if (params?.include_inactive) searchParams.append('include_inactive', 'true')
 
     const queryString = searchParams.toString()
     return apiRequest<PaginatedResponse<PatientResponse>>(`/api/patients${queryString ? `?${queryString}` : ''}`)
